@@ -63,12 +63,20 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
   private var playlistBuff = Queue.empty[PlayableSong]
 
   private class PlaylistPush extends {
-    private val pushPlaylistBuff = (onNext: PlayableSong ⇒ Unit, decrementReqs: () ⇒ Unit, _: () ⇒ Boolean) ⇒ {
-      playlistBuff.foreach(onNext)
-      playlistBuff = Queue.empty[PlayableSong]
-      decrementReqs()
+    private val songLeft = () ⇒ !playlistBuff.isEmpty
+    private val pushPlaylistBuff = (onNext: PlayableSong ⇒ Unit, decrementReqs: () ⇒ Unit, requested: () ⇒ Boolean) ⇒ {
+      @tailrec
+      def loop(): Unit =
+        if (requested() && songLeft()) {
+          val (song, tempPlaylistBuff) = playlistBuff.dequeue
+          playlistBuff = tempPlaylistBuff
+          onNext(song)
+          decrementReqs()
+          loop()
+        }
+      loop()
     }
-  } with Push[PlayableSong](() ⇒ !playlistBuff.isEmpty, pushPlaylistBuff) {
+  } with Push[PlayableSong](songLeft, pushPlaylistBuff) {
     override def addToBuff(song: PlayableSong) = playlistBuff = playlistBuff.enqueue(song)
     override protected def writes = new Writes[PlayableSong] {
       def writes(ps: PlayableSong) = ps match {
