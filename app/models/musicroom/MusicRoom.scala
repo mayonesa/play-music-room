@@ -194,7 +194,7 @@ private class MusicRoom(private val id: Int,
 
   private def roomVer(newPlaylist: Playlist, newSkipVs: Int) = MusicRoom(id, name, newPlaylist, channels, newSkipVs, chatBox, roomScheduler, futurePlay, lock)
 
-  private def updateLatestRoomVer(newFuturePlay: TimerTask) = lock.synchronized {
+  private def updateLatestRoomVer(newFuturePlay: TimerTask) = {
     val latestRoomVer = getLatestRoomVer
     replaceRoomVer(MusicRoom(id, name, latestRoomVer.playlist, latestRoomVer.channels, latestRoomVer.nSkipVotes, chatBox, latestRoomVer.roomScheduler, newFuturePlay, lock))
   }
