@@ -25,11 +25,11 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     chatPush.addToBuff((cn, e))
     chatPush.push()
   }
-  protected def postPlaylistInit() = {
-    playlistView.map(playlistPush.addToBuff(_))
+  protected def postPlaylistInit() = playlistPush.lock.synchronized {
+    playlistView.map(playlistPush.addToBuff(_)).force
     pushRequestedPlaylistBuff()
   }
-  protected def postSongAdd(song: Song) = {
+  protected def postSongAdd(song: Song) = playlistPush.lock.synchronized {
     playlistPush.addToBuff((song, false))
     pushRequestedPlaylistBuff()
   }
@@ -51,9 +51,7 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
 
   private class SongPush extends {
     private val actuallyPushSong = (onNext: Int ⇒ Unit, decrementReqs: () ⇒ Unit, _: () ⇒ Boolean) ⇒ {
-      logger.debug("actually pushing")
       songIdOpt.foreach(onNext)
-      logger.debug("after opt.foreach")
       songIdOpt = None
       decrementReqs()
     }
@@ -76,7 +74,9 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
       def writes(ps: PlayableSong) = ps match {
         case (song, current) ⇒
           Json.obj(
-            "song" -> song.name,
+            "id" -> song.id,
+            "name" -> song.name,
+            "artist" -> song.artist,
             "duration" -> song.length.toString,
             "current" -> current)
       }
@@ -93,7 +93,7 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
         if (requested() && chatLeft()) {
           val (chat, tempChatQ) = chatBuff.dequeue
           chatBuff = tempChatQ
-          chatBuff.foreach(onNext)
+          onNext(chat)
           decrementReqs()
           loop()
         }
@@ -125,7 +125,7 @@ object FullChannel {
   def addChannel(name: String): Channel = Channel.addChannel(FullChannel(name))
 
   private abstract class Push[T](readyForPush: () ⇒ Boolean, push: (T ⇒ Unit, () ⇒ Unit, () ⇒ Boolean) ⇒ Unit) {
-    val lock = new AnyRef // TODO: needed? music room is got 'em
+    val lock = new AnyRef
     val pub = new PublisherImpl
     private var unfulfilledRequests: Long = _
     private var sub: Subscriber[_ >: JsValue] = _
@@ -143,11 +143,8 @@ object FullChannel {
         s.onSubscribe(new Subscription {
           def request(n: Long): Unit = lock.synchronized {
             unfulfilledRequests += n
-            logger.debug("ready for push? " + readyForPush())
             if (readyForPush()) {
-              logger.debug("push")
               push(onNext, () ⇒ decrementReqs, () ⇒ requested)
-              logger.debug("pushed")
             }
           }
           def cancel(): Unit = () // Cancellation handled through the "LeaveRoom" event

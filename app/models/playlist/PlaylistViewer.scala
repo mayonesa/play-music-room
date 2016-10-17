@@ -22,7 +22,9 @@ trait PlaylistViewer {
         _playlist = playlist
         _currentSongIndex = if (playlist.isEmpty) -1 else currentSongIndex // in the beginning, the source playlist current song index is a singularity
     }
-    postPlaylistInit()
+    if (!_playlist.isEmpty) {
+      postPlaylistInit()
+    }
   }
   private[models] def onSongAdd(song: Song): Unit = {
     _playlist = playlist enqueue song
