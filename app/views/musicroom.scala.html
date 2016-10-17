@@ -1,0 +1,80 @@
+@import helper._
+
+@(channel: models.channel.Channel, musicLibrary: Iterable[models.song.Song])(implicit  session: play.api.mvc.Session, req: play.api.mvc.RequestHeader)
+
+@main {
+    
+    <h1>@channel.name @@ @session.get("roomName")</h1>
+    
+	@javascriptRouter("jsRoutes")(
+	    routes.javascript.MusicRoomController.addSong,
+	    routes.javascript.MusicRoomController.voteToSkip,
+	    routes.javascript.MusicRoomController.leaveRoom,
+	    routes.javascript.MusicRoomController.chat,
+	    routes.javascript.MusicRoomController.ssePlaylistAdds,
+	    routes.javascript.MusicRoomController.sseChats,
+	    routes.javascript.MusicRoomController.sseSongInfos,
+	    routes.javascript.MusicRoomController.playSong
+	)    
+	
+    <div id="libContainer">
+        <ul>
+        @musicLibrary.map { song =>
+            <li>
+                @song.name - @song.author (@song.length)<button onclick="addSong(@song.id);">Add</button>
+            </li>
+        }
+        </ul>
+    </div>
+    <div id="playerContainer">
+    	<audio autoplay>
+    		<p>Your browser does not support this audio player/format. Try from a more current/common one.</p>
+    	</audio>
+    </div>
+    @if(channel.isInstanceOf[models.playlist.PlaylistViewer]) {
+    	<div id="playlistContainer"></div>
+    }
+    <div id="voteToSkipContainer"><button onclick="voteToSkip();">Vote to Skip Song</button></div>
+    @if(channel.isInstanceOf[models.chatbox.client.ChatBoxListener]) {
+	    <div id="chatLogContainer"></div>
+			@if(channel.isInstanceOf[models.chatbox.client.ChatBoxFullClient]) {
+    			<div id="chatContainer">
+				<label>talk
+					<input type="text" id="text" required="required">
+					<input type="button" value="Send" class="buttons" onclick="chat()"/>
+				</label>
+	 		}
+	 	</div>
+ 	}
+    <div id="leaveRoomContainer"><button onclick="leaveRoom();">Leave Room</button></div>
+    <script>
+    var channelId = @channel.id;
+    var alreadyVoted = false;
+    
+    function addSong(songId) {
+        $.ajax(jsRoutes.controllers.MusicRoomController.addSong(channelId, songId))
+    };
+    function voteToSkip() {
+    	if (alreadyVoted) {
+    		alert("already voted to skip this song");
+    	} else {
+    		alreadyVoted = true;
+        	$.ajax(jsRoutes.controllers.MusicRoomController.voteToSkip(channelId, currentSongId))
+        }
+    };
+    function chat() {
+    	var chatInputElem = $("#text");
+        $.post(jsRoutes.controllers.MusicRoomController.chat(channelId),
+        	{ "text": chatInputElem.val() },
+        	function() { 
+        		chatInputElem.val("")
+        	}
+        );
+    };
+    function leaveRoom() {
+        location = jsRoutes.controllers.MusicRoomController.leaveRoom(channelId).url
+    };
+    </script>
+    <script src="@routes.Assets.at("javascripts/playlist.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/player.js")" type="text/javascript"></script>
+}

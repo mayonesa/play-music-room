@@ -1,0 +1,21 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET   /                                                     controllers.HomeController.index()
+GET   /musicRoom                                            controllers.HomeController.index()
+
+POST  /musicRoom/join                                       controllers.HomeController.join()
+GET   /musicRoom/channel/:channelId                         controllers.MusicRoomController.index(channelId: Int)
+GET   /musicRoom/leaveRoom/channel/:channelId               controllers.MusicRoomController.leaveRoom(channelId: Int)
+GET   /musicRoom/addSong/channel/:channelId/song/:songId    controllers.MusicRoomController.addSong(channelId: Int, songId: Int)
+GET   /musicRoom/play/song/:songId						    controllers.MusicRoomController.playSong(songId: Int)
+GET   /musicRoom/voteToSkip/channel/:channelId/song/:songId controllers.MusicRoomController.voteToSkip(channelId: Int, songId: Int)
+POST  /musicRoom/chat/channel/:channelId                    controllers.MusicRoomController.chat(channelId: Int)
+GET   /musicRoom/ssePlaylistAdds/channel/:channelId         controllers.MusicRoomController.ssePlaylistAdds(channelId: Int)
+GET   /musicRoom/sseChats/channel/:channelId                controllers.MusicRoomController.sseChats(channelId: Int)
+GET   /musicRoom/sseSongInfos/channel/:channelId            controllers.MusicRoomController.sseSongInfos(channelId: Int)
+
+# Map static resources from the /public folder to the /assets URL path
+GET  /assets/*file                                          controllers.Assets.at(path="/public", file)
