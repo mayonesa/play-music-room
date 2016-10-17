@@ -6,8 +6,8 @@ import events._
 
 import concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.EventSource
 import play.api.http.ContentTypes.EVENT_STREAM
-import play.api.libs.EventSource.flow
 import play.api.mvc.{ Controller, Action }
 import Action.async
 import play.api.libs.json.JsValue
@@ -71,5 +71,5 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
     Accepted
   }
 
-  private def sse(pub: Publisher[JsValue]) = Ok.chunked(fromPublisher(pub) via flow).as(EVENT_STREAM)
+  private def sse(pub: Publisher[JsValue]) = Ok.chunked(fromPublisher(pub) via EventSource.flow).as(EVENT_STREAM)
 }

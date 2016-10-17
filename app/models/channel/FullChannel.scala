@@ -25,7 +25,6 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     chatPush.addToBuff((cn, e))
     chatPush.push()
   }
-
   protected def postPlaylistInit() = {
     playlistView.map(playlistPush.addToBuff(_))
     pushRequestedPlaylistBuff()
@@ -60,7 +59,7 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     }
   } with Push[Int](() ⇒ songIdOpt.isDefined, actuallyPushSong) {
     override def addToBuff(songId: Int) = songIdOpt = Some(songId)
-    override def writes = Writes.IntWrites
+    override protected def writes = Writes.IntWrites
   }
 
   private var playlistBuff = Queue.empty[PlayableSong]
@@ -73,7 +72,7 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     }
   } with Push[PlayableSong](() ⇒ !playlistBuff.isEmpty, pushPlaylistBuff) {
     override def addToBuff(song: PlayableSong) = playlistBuff = playlistBuff.enqueue(song)
-    override def writes = new Writes[PlayableSong] {
+    override protected def writes = new Writes[PlayableSong] {
       def writes(ps: PlayableSong) = ps match {
         case (song, current) ⇒
           Json.obj(
@@ -102,7 +101,7 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     }
   } with Push[ChatBoxClientNameEvent](chatLeft, pushChats) {
     override def addToBuff(cbcne: ChatBoxClientNameEvent) = chatBuff = chatBuff.enqueue(cbcne)
-    override def writes = new Writes[ChatBoxClientNameEvent] {
+    override protected def writes = new Writes[ChatBoxClientNameEvent] {
       def writes(cbcne: ChatBoxClientNameEvent) = cbcne match {
         case (author, chatEvent) ⇒
           Json.obj(
@@ -131,7 +130,7 @@ object FullChannel {
     private var unfulfilledRequests: Long = _
     private var sub: Subscriber[_ >: JsValue] = _
 
-    implicit def writes: Writes[T]
+    protected implicit def writes: Writes[T]
     def push(): Unit = push(onNext, () ⇒ decrementReqs, () ⇒ requested)
     def requested = unfulfilledRequests > 0
     protected def addToBuff(t: T)
