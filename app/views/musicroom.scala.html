@@ -53,6 +53,7 @@
     <script>
     var channelId = @channel.id;
     var alreadyVoted = false;
+    var currentSongId = null;
     
     function addSong(songId) {
         $.ajax(jsRoutes.controllers.MusicRoomController.addSong(channelId, songId))

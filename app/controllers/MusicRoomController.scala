@@ -4,7 +4,7 @@ import models.channel.{ Channel, FullChannel }
 import models.song._
 import events._
 
-import concurrent.Future
+import concurrent.{ Future, blocking }
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.EventSource
 import play.api.http.ContentTypes.EVENT_STREAM
@@ -28,7 +28,10 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
     Ok(views.html.musicroom(Channel(channelId), songs.allSongs))
   }
 
-  def addSong(channelId: Int, songId: Int) = react(channelId, AddSong(songs(songId)))
+  def addSong(channelId: Int, songId: Int) = {
+    logger.debug("add song")
+    react(channelId, AddSong(songs(songId)))
+  }
 
   def voteToSkip(channelId: Int, songId: Int) = react(channelId, VoteToSkipSong(songs(songId)))
 
@@ -48,9 +51,7 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
       Accepted
   }
 
-  def sseSongInfos(channelId: Int) = Action {
-    sse(FullChannel(channelId).songPub)
-  }
+  def sseSongInfos(channelId: Int) = sse(channelId, _.songPub)
 
   def playSong(songId: Int) = async {
     songs.getFile(songId).map {
@@ -58,18 +59,18 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
     }(ioOps)
   }
 
-  def ssePlaylistAdds(channelId: Int) = Action {
-    sse(FullChannel(channelId).playlistPub)
-  }
+  def ssePlaylistAdds(channelId: Int) = sse(channelId, _.playlistPub)
 
-  def sseChats(channelId: Int) = Action {
-    sse(FullChannel(channelId).chatPub)
-  }
+  def sseChats(channelId: Int) = sse(channelId, _.chatPub)
 
   private def react(channelId: Int, msg: Message) = Action {
     Future(Channel(channelId).msgHandler(msg))
     Accepted
   }
 
-  private def sse(pub: Publisher[JsValue]) = Ok.chunked(fromPublisher(pub) via EventSource.flow).as(EVENT_STREAM)
+  private def sse(channelId: Int, getPub: (FullChannel) ⇒ Publisher[JsValue]) = async {
+    Future(getPub(FullChannel(channelId))).map { pub ⇒
+      Ok.chunked(fromPublisher(pub) via EventSource.flow).as(EVENT_STREAM)
+    }
+  }
 }
