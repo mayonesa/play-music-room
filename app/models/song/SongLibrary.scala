@@ -28,9 +28,7 @@ class SongLibrary @Inject() (system: ActorSystem) {
   def allSongs: Iterable[Song] = songs.values
   def getFile(songId: Int): Future[File] = Future {
     blocking {
-      val song = songs(songId)
-      logger.debug("sending file for song: " + song.name)
-      new File(song.location)
+      new File(songs(songId).location)
     }
   }(ioOps)
 }

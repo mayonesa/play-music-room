@@ -23,12 +23,11 @@ package object auxiliaries {
   type ChatEvent = (Text, ZonedDateTime)
   type ChatBoxClientName = String
   type Text = String
-  
+
   private val logger = Logger(getClass)
 
   def schedule(body: () ⇒ Unit, delay: Duration, scheduler: Timer): TimerTask = {
     val task = timerTask(body)
-    logger.debug(s"schedule: $body in $delay")
     scheduler.schedule(task, delay.toMillis)
     task
   }

@@ -28,10 +28,7 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
     Ok(views.html.musicroom(Channel(channelId), songs.allSongs))
   }
 
-  def addSong(channelId: Int, songId: Int) = {
-    logger.debug("add song")
-    react(channelId, AddSong(songs(songId)))
-  }
+  def addSong(channelId: Int, songId: Int) = react(channelId, AddSong(songs(songId)))
 
   def voteToSkip(channelId: Int, songId: Int) = react(channelId, VoteToSkipSong(songs(songId)))
 
@@ -51,13 +48,13 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
       Accepted
   }
 
-  def sseSongInfos(channelId: Int) = sse(channelId, _.songPub)
-
   def playSong(songId: Int) = async {
     songs.getFile(songId).map {
       Ok.sendFile(_)
     }(ioOps)
   }
+
+  def sseSongInfos(channelId: Int) = sse(channelId, _.songPub)
 
   def ssePlaylistAdds(channelId: Int) = sse(channelId, _.playlistPub)
 

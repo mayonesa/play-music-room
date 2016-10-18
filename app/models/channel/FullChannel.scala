@@ -62,6 +62,7 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
 
   private var playlistBuff = Queue.empty[PlayableSong]
 
+  // TODO: factor out push()
   private class PlaylistPush extends {
     private val songLeft = () ⇒ !playlistBuff.isEmpty
     private val pushPlaylistBuff = (onNext: PlayableSong ⇒ Unit, decrementReqs: () ⇒ Unit, requested: () ⇒ Boolean) ⇒ {

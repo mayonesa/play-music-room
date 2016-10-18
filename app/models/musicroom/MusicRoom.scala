@@ -117,9 +117,7 @@ private class MusicRoom(private val id: Int,
     val newRoomVer = roomVer(playlist enqueue song)
     replaceRoomVer(newRoomVer)
     publishAdd(song)
-    logger.debug("add song: nothing already playing?: " + !playlist.isPlayable)
     if (!playlist.isPlayable) {
-      logger.debug("add song: new room playlist: " + newRoomVer.playlist)
       newRoomVer.play()
     }
   }
@@ -158,15 +156,11 @@ private class MusicRoom(private val id: Int,
     newRoomVer
   }
 
-  private def play(): Unit = {
-    logger.debug("play(): playable?: " + playlist.isPlayable)
+  private def play(): Unit =
     if (playlist.isPlayable) {
-      logger.debug("play(): pushing to channels: " + channels)
       getLatestRoomVer.channels.foreach(pushSong)
-      logger.debug("play(): sent " + currentSong.name)
       updateLatestRoomVer(roomSchedule(playNext, currentSong.length))
     }
-  }
 
   private def pushSong(c: Channel) = {
     c.pushSong(currentSong)
@@ -176,13 +170,7 @@ private class MusicRoom(private val id: Int,
     }
   }
 
-  private def playNext() = {
-    logger.debug("getting lock to play next")
-    lock.synchronized {
-      logger.debug("inside lock -> next -> play")
-      getLatestRoomVer.next().play()
-    }
-  }
+  private def playNext() = lock.synchronized(getLatestRoomVer.next().play())
 
   private def currentSong = playlist.currentSong
 
