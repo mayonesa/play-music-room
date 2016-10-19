@@ -3,11 +3,12 @@ package models.channel
 import models.chatbox.client.ChatBoxFullClient
 import models.playlist.PlaylistViewer
 import models.song.Song
-import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlayableSong, PlaylistView }
-import models.channel.FullChannel.{ Push, logger }
+import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlayableSong }
+import models.channel.FullChannel.{ Push, ClearPlaylist, logger }
 
 import collection.immutable.Queue
-import scala.annotation.tailrec
+import annotation.tailrec
+import concurrent.duration._
 import org.reactivestreams.{ Publisher, Subscriber, Subscription }
 import play.api.libs.json._
 import play.api.Logger
@@ -25,21 +26,27 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     chatPush.addToBuff((cn, e))
     chatPush.push()
   }
-  protected def postPlaylistInit() = playlistPush.lock.synchronized {
-    playlistView.map(playlistPush.addToBuff(_)).force
+  protected def postPlaylistInit() = playlistPush.lock.synchronized(sendPlaylist())
+  protected def postSongPush(): Unit = playlistPush.lock.synchronized {
+    playlistBuff = Queue(ClearPlaylist)
     pushRequestedPlaylistBuff()
+    sendPlaylist()
   }
   protected def postSongAdd(song: Song) = playlistPush.lock.synchronized {
     playlistPush.addToBuff((song, false))
     pushRequestedPlaylistBuff()
   }
-  protected def postSongPush(): Unit = ()
 
   private[models] def pushSong(song: Song) = songPush.lock.synchronized {
     songPush.addToBuff(song.id)
     if (songPush.requested) {
       songPush.push()
     }
+  }
+
+  private def sendPlaylist() = {
+    playlistView.map(playlistPush.addToBuff(_)).force
+    pushRequestedPlaylistBuff()
   }
 
   private def pushRequestedPlaylistBuff() =
@@ -56,13 +63,14 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
       decrementReqs()
     }
   } with Push[Int](() ⇒ songIdOpt.isDefined, actuallyPushSong) {
-    override def addToBuff(songId: Int) = songIdOpt = Some(songId)
-    override protected def writes = Writes.IntWrites
+    override protected[channel] def addToBuff(songId: Int) = songIdOpt = Some(songId)
+    override protected[channel] def writes = Writes.IntWrites
   }
 
   private var playlistBuff = Queue.empty[PlayableSong]
 
-  // TODO: factor out push()
+  // TODO: refactor out push() after chat history works
+  
   private class PlaylistPush extends {
     private val songLeft = () ⇒ !playlistBuff.isEmpty
     private val pushPlaylistBuff = (onNext: PlayableSong ⇒ Unit, decrementReqs: () ⇒ Unit, requested: () ⇒ Boolean) ⇒ {
@@ -78,8 +86,8 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
       loop()
     }
   } with Push[PlayableSong](songLeft, pushPlaylistBuff) {
-    override def addToBuff(song: PlayableSong) = playlistBuff = playlistBuff.enqueue(song)
-    override protected def writes = new Writes[PlayableSong] {
+    override protected[channel] def addToBuff(song: PlayableSong) = playlistBuff = playlistBuff.enqueue(song)
+    override protected[channel] def writes = new Writes[PlayableSong] {
       def writes(ps: PlayableSong) = ps match {
         case (song, current) ⇒
           Json.obj(
@@ -109,8 +117,8 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
       loop()
     }
   } with Push[ChatBoxClientNameEvent](chatLeft, pushChats) {
-    override def addToBuff(cbcne: ChatBoxClientNameEvent) = chatBuff = chatBuff.enqueue(cbcne)
-    override protected def writes = new Writes[ChatBoxClientNameEvent] {
+    override protected[channel] def addToBuff(cbcne: ChatBoxClientNameEvent) = chatBuff = chatBuff.enqueue(cbcne)
+    override protected[channel] def writes = new Writes[ChatBoxClientNameEvent] {
       def writes(cbcne: ChatBoxClientNameEvent) = cbcne match {
         case (author, chatEvent) ⇒
           Json.obj(
@@ -126,6 +134,8 @@ import models.channel.Channel.newId
 import com.sun.org.apache.xml.internal.resolver.helpers.Debug
 
 object FullChannel {
+  private val ClearPlaylistSongId = -999
+  private val ClearPlaylist = (Song(ClearPlaylistSongId, "", "", 0 seconds, ""), false)
   def apply(id: Int): FullChannel = Channel(id).asInstanceOf[FullChannel]
   private def apply(name: String): FullChannel = FullChannel(newId, name)
 
@@ -134,19 +144,19 @@ object FullChannel {
   def addChannel(name: String): Channel = Channel.addChannel(FullChannel(name))
 
   private abstract class Push[T](readyForPush: () ⇒ Boolean, push: (T ⇒ Unit, () ⇒ Unit, () ⇒ Boolean) ⇒ Unit) {
-    val lock = new AnyRef
-    val pub = new PublisherImpl
-    private var unfulfilledRequests: Long = _
+    private[channel] val lock = new AnyRef
+    private[channel] val pub = new PublisherImpl
     private var sub: Subscriber[_ >: JsValue] = _
+    private var unfulfilledRequests: Long = _
 
-    protected implicit def writes: Writes[T]
-    def push(): Unit = push(onNext, () ⇒ decrementReqs, () ⇒ requested)
-    def requested = unfulfilledRequests > 0
-    protected def addToBuff(t: T)
-    private def decrementReqs() = unfulfilledRequests -= 1
+    protected[channel] implicit def writes: Writes[T]
+    protected[channel] def addToBuff(t: T)
+    private[channel] def push(): Unit = push(onNext, () ⇒ decrementReqs, () ⇒ requested)
+    private[channel] def requested = unfulfilledRequests > 0
     private def onNext(t: T) = sub.onNext(Json.toJson(t))
+    private def decrementReqs() = unfulfilledRequests -= 1
 
-    class PublisherImpl extends Publisher[JsValue] {
+    private[channel] class PublisherImpl extends Publisher[JsValue] {
       def subscribe(s: Subscriber[_ >: JsValue]): Unit = {
         sub = s
         s.onSubscribe(new Subscription {

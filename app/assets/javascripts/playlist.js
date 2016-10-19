@@ -1,18 +1,22 @@
+var CLEAR_PLAYLIST_SONG_ID = -999;
 $(function() {
 	var $playlist = $('#playlist');
+	var liClass;
+	var song;
 	var playlistAddsSrc = new EventSource(jsRoutes.controllers.MusicRoomController.ssePlaylistAdds(channelId).url);
 	playlistAddsSrc.addEventListener('message', function(event) {
-		var playableSong = JSON.parse(event.data);
-		var liClass;
-		if (playableSong.current) {
-			liClass = 'currentSong';
-		} else {
-			liClass = 'playlistItem';
+		song = JSON.parse(event.data);
+		if (song.id === CLEAR_PLAYLIST_SONG_ID) {
+			$playlist.empty();
 		}
-		var li = '<li id="' + playableSong.id + '" class="' + liClass + '">' + playableSong.name + ' - ' + playableSong.artist + ' (' + playableSong.duration + ')</li>';
-		$playlist.append(li);
+		else {
+			if (song.current) {
+				liClass = 'currentSong';
+			} else {
+				liClass = 'playlistItem';
+			}
+			var li = '<li id="' + song.id + '" class="' + liClass + '">' + song.name + ' - ' + song.artist + ' (' + song.duration + ')</li>';
+			$playlist.append(li);
+		}
 	});
 });
-function advancePlaylistToNext() {
-
-}
