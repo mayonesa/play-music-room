@@ -141,7 +141,7 @@ object FullChannel {
     protected[FullChannel] def onNext(t: T) = sub.onNext(Json.toJson(t))
     protected[FullChannel] def decrementReqs() = unfulfilledRequests -= 1
 
-    private[channel] class PublisherImpl extends Publisher[JsValue] {
+    private[FullChannel] class PublisherImpl extends Publisher[JsValue] {
       def subscribe(s: Subscriber[_ >: JsValue]): Unit = {
         sub = s
         s.onSubscribe(new Subscription {
