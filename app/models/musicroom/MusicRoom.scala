@@ -26,8 +26,8 @@ object MusicRoom {
   private val logger = Logger(getClass)
 
   private def apply(name: String): MusicRoom = new MusicRoom(name)
-  private def apply(id: Int, name: String, playlist: Playlist, cs: ParSet[Channel], nSkipVotes: Int, chatBox: ChatBox, roomScheduler: Timer, futurePlay: TimerTask, lock: AnyRef) =
-    new MusicRoom(id, name, playlist, cs, nSkipVotes, chatBox, roomScheduler, futurePlay, lock)
+  private def apply(id: Int, name: String, playlist: Playlist, cs: ParSet[Channel], nSkipVotes: Int, chatBox: ChatBox, roomScheduler: Timer, futurePlay: TimerTask, lastPlayTime: Duration, lock: AnyRef) =
+    new MusicRoom(id, name, playlist, cs, nSkipVotes, chatBox, roomScheduler, futurePlay, lastPlayTime, lock)
 
   private val roomRepo = mutable.Map.empty[Int, MusicRoom]
   private val roomIdGen = new AtomicInteger
@@ -36,22 +36,23 @@ object MusicRoom {
    * Public entry points... further communication with the clients will be through the channel
    * Assumptions: - only *one* room per channel
    *              - clients will not attempt to send messages to channels until they *finished* joining and/or creating the room.
-   *              - temporary: in the case where a channel joins a pre-existing room, the channel's listening experience will commence
-   *              when the *next* song in the playlist begins playing (i.e., when the currently-playing song is through).
    * @param roomId the id of the room.
    * @param channel the communication Channel with the clients going forward.
    */
 
-  def createAndJoinRoom(roomName: String, channel: Channel): Future[String] = addAndInitChannel(addNewRoom(roomName), channel)
+  def createAndJoinRoom(roomName: String, channel: Channel): Future[String] = Future(addAndInitChannel(addNewRoom(roomName), channel).name)
 
-  // TODO: play midstream song in midstream
-  def joinRoom(roomId: Int, channel: Channel): Future[String] = addAndInitChannel(roomRepo(roomId), channel)
+  def joinRoom(roomId: Int, channel: Channel): Future[String] = Future {
+    val room = addAndInitChannel(roomRepo(roomId), channel)
+    room.playCurrentInMidstream(channel)
+    room.name
+  }
 
   def roomViews: Map[String, String] = roomRepo.toMap.map {
     case (k, v) ⇒ (k.toString, v.name)
   }
 
-  private def addAndInitChannel(room: MusicRoom, channel: Channel) = Future {
+  private def addAndInitChannel(room: MusicRoom, channel: Channel) = {
     val roomLock = room.lock
     val roomId = room.id
 
@@ -81,7 +82,7 @@ object MusicRoom {
           case _                  ⇒
         }
     }
-    room.name
+    room
   }
 
   private def addNewRoom(roomName: String) = roomRepo.synchronized {
@@ -105,9 +106,10 @@ private class MusicRoom(private val id: Int,
                         private val chatBox: ChatBox,
                         private val roomScheduler: Timer, // timer for all versions of the same room to avoid creating new threads for every room version
                         futurePlay: TimerTask, // cancellable future-play task
+                        lastPlayTime: Duration,
                         private val lock: AnyRef) { // lock for all versions of the same room to avoid blocking all the rooms just for room-specific safety req'ts
 
-  private def this(name: String) = this(roomIdGen.incrementAndGet(), name, Playlist(), ParSet.empty[Channel], 0, new ChatBoxImpl, new Timer(), null, new AnyRef)
+  private def this(name: String) = this(roomIdGen.incrementAndGet(), name, Playlist(), ParSet.empty[Channel], 0, new ChatBoxImpl, new Timer(), null, null, new AnyRef)
 
   private def addChannel(channel: Channel): MusicRoom = roomVer(channels + channel)
 
@@ -136,6 +138,13 @@ private class MusicRoom(private val id: Int,
       }
     }
 
+  private def playCurrentInMidstream(ch: Channel) = if (!playlist.isEmpty) {
+    val currentSongElapsed: Duration = System.currentTimeMillis().millis - lastPlayTime
+    if (currentSongElapsed < currentSong.length) {
+      ch.pushSong(currentSong, currentSongElapsed)
+    }
+  }
+
   private def publishAdd(songId: Song) = channels.foreach {
     case pv: PlaylistViewer ⇒ pv.onSongAdd(songId)
     case _                  ⇒
@@ -159,8 +168,10 @@ private class MusicRoom(private val id: Int,
   private def play(): Unit =
     if (playlist.isPlayable) {
       getLatestRoomVer.channels.foreach(pushSong)
-      updateLatestRoomVer(roomSchedule(playNext, currentSong.length))
+      schedNextPlay()
     }
+
+  private def schedNextPlay() = updateRoomVerWithPlayInfo(roomSchedule(playNext, currentSong.length))
 
   private def pushSong(c: Channel) = {
     c.pushSong(currentSong)
@@ -178,13 +189,13 @@ private class MusicRoom(private val id: Int,
 
   private def roomVer(newPlaylist: Playlist): MusicRoom = roomVer(newPlaylist, nSkipVotes)
 
-  private def roomVer(newChannels: ParSet[Channel]) = MusicRoom(id, name, playlist, newChannels, nSkipVotes, chatBox, roomScheduler, futurePlay, lock)
+  private def roomVer(newChannels: ParSet[Channel]) = MusicRoom(id, name, playlist, newChannels, nSkipVotes, chatBox, roomScheduler, futurePlay, lastPlayTime, lock)
 
-  private def roomVer(newPlaylist: Playlist, newSkipVs: Int) = MusicRoom(id, name, newPlaylist, channels, newSkipVs, chatBox, roomScheduler, futurePlay, lock)
+  private def roomVer(newPlaylist: Playlist, newSkipVs: Int) = MusicRoom(id, name, newPlaylist, channels, newSkipVs, chatBox, roomScheduler, futurePlay, lastPlayTime, lock)
 
-  private def updateLatestRoomVer(newFuturePlay: TimerTask) = {
+  private def updateRoomVerWithPlayInfo(newFuturePlay: TimerTask) = {
     val latestRoomVer = getLatestRoomVer
-    replaceRoomVer(MusicRoom(id, name, latestRoomVer.playlist, latestRoomVer.channels, latestRoomVer.nSkipVotes, chatBox, latestRoomVer.roomScheduler, newFuturePlay, lock))
+    replaceRoomVer(MusicRoom(id, name, latestRoomVer.playlist, latestRoomVer.channels, latestRoomVer.nSkipVotes, chatBox, latestRoomVer.roomScheduler, newFuturePlay, System.currentTimeMillis().millis, lock))
   }
 
   private def roomSchedule(body: () ⇒ Unit, delay: Duration) = schedule(body, delay, roomScheduler)

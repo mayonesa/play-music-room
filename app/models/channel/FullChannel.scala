@@ -37,8 +37,8 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     pushRequestedPlaylistBuff()
   }
 
-  private[models] def pushSong(song: Song) = songPush.lock.synchronized {
-    songPush.addToBuff(song.id)
+  private[models] def pushSong(song: Song, startTime: Duration) = songPush.lock.synchronized {
+    songPush.addToBuff((song.id, startTime))
     if (songPush.requested) {
       songPush.push()
     }
@@ -68,16 +68,23 @@ object FullChannel {
 
   def addChannel(name: String): Channel = Channel.addChannel(FullChannel(name))
 
-  private class SongPush extends Push[Int] {
+  private class SongPush extends Push[(Int, Duration)] {
     override protected[FullChannel] def push() = {
       onNext(buff.dequeueAll(_ ⇒ true).last)
       decrementReqs()
     }
-    override protected[FullChannel] def addToBuff(songId: Int) = {
+    override protected[FullChannel] def addToBuff(songPlay: (Int, Duration)) = {
       buff.clear()
-      buff.enqueue(songId)
+      buff.enqueue(songPlay)
     }
-    override protected[FullChannel] def writes = Writes.IntWrites
+    override protected[FullChannel] def writes = new Writes[(Int, Duration)] {
+      def writes(songPlay: (Int, Duration)) = songPlay match {
+        case (songId, startTime) ⇒
+          Json.obj(
+            "songId" -> songId,
+            "startTimeInSecs" -> startTime.toSeconds)
+      }
+    }
   }
 
   private class PlaylistPush extends Push[PlayableSong] {
@@ -99,7 +106,7 @@ object FullChannel {
   }
 
   private class ChatPush extends Push[ChatBoxClientNameEvent] {
-    override protected[channel] def writes = new Writes[ChatBoxClientNameEvent] {
+    override protected[FullChannel] def writes = new Writes[ChatBoxClientNameEvent] {
       def writes(cbcne: ChatBoxClientNameEvent) = cbcne match {
         case (author, chatEvent) ⇒
           Json.obj(
