@@ -16,11 +16,11 @@
 	    routes.javascript.MusicRoomController.sseSongInfos,
 	    routes.javascript.MusicRoomController.playSong
 	)    
-	
+	<!-- TODO: on unload, leave room (handle refresh as well) -->
     <div id="libContainer">
         <ul>
         @musicLibrary.map { song =>
-            <li onclick="addSong(@song.id);">@song.name - @song.artist (@song.length)</li>
+            <li>@song.name - @song.artist (@song.length)<input type="button" value="Add" onclick="addSong(@song.id);"></li>
         }
         </ul>
     </div>
