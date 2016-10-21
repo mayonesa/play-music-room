@@ -55,7 +55,7 @@
     var $chat;
     $(function() {
     	$chat = $("#text");
-    	$(window).unload(function() {
+    	$(window).on("unload", function() {
     		leaveRoom();
     	});
     });
