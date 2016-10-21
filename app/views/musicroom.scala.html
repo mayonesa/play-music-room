@@ -55,6 +55,9 @@
     var $chat;
     $(function() {
     	$chat = $("#text");
+    	$(window).unload(function() {
+    		leaveRoom();
+    	});
     });
     function addSong(songId) {
         $.ajax(jsRoutes.controllers.MusicRoomController.addSong(channelId, songId))
