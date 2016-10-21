@@ -8,7 +8,7 @@ import concurrent.{ Future, blocking }
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.EventSource
 import play.api.http.ContentTypes.EVENT_STREAM
-import play.api.mvc.{ Controller, Action }
+import play.api.mvc.{ Controller, Action, RangeResult }
 import Action.async
 import play.api.libs.json.JsValue
 import play.api.Logger
@@ -48,9 +48,9 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
       Accepted
   }
 
-  def playSong(songId: Int) = async {
+  def playSong(songId: Int) = async { implicit request ⇒
     songs.getFile(songId).map {
-      Ok.sendFile(_)
+      RangeResult.ofFile(_, request.headers.get(RANGE), Some("audio/mp3"))
     }(ioOps)
   }
 
