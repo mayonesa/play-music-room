@@ -3,7 +3,7 @@ package models.channel
 import models.chatbox.client.ChatBoxFullClient
 import models.playlist.PlaylistViewer
 import models.song.Song
-import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlayableSong }
+import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlayableSong, ClearPlaylist }
 import models.channel.FullChannel.{ SongPush, PlaylistPush, ChatPush, logger }
 
 import collection.mutable
@@ -59,8 +59,6 @@ import models.channel.Channel.newId
 import com.sun.org.apache.xml.internal.resolver.helpers.Debug
 
 object FullChannel {
-  private val ClearPlaylistSongId = -999
-  private val ClearPlaylist = (Song(ClearPlaylistSongId, "", "", 0 seconds, ""), false)
   def apply(id: Int): FullChannel = Channel(id).asInstanceOf[FullChannel]
   private def apply(name: String): FullChannel = FullChannel(newId, name)
 

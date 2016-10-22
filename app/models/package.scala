@@ -26,13 +26,21 @@ package object auxiliaries {
 
   private val logger = Logger(getClass)
 
+  private val ClearPlaylistSongId = -999
+  private val ClearSong = Song(ClearPlaylistSongId, "", "", 0 seconds, "")
+  private val KillSongTime = -888.seconds
+  private[models] val ClearPlaylist = (ClearSong, false)
+  private[models] val KillSong = (Song(0, "", "", 0 seconds, ""), KillSongTime)
+
   def schedule(body: () ⇒ Unit, delay: Duration, scheduler: Timer): TimerTask = {
     val task = timerTask(body)
     scheduler.schedule(task, delay.toMillis)
     task
   }
 
-  def timerTask(body: () ⇒ Unit) =
+  def currentTime = System.currentTimeMillis().millis
+
+  private def timerTask(body: () ⇒ Unit) =
     new TimerTask {
       def run = body()
     }
