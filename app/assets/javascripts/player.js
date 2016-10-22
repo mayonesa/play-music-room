@@ -8,12 +8,17 @@ $(function() {
 		var songInfoSrc = new EventSource(jsRoutes.controllers.MusicRoomController.sseSongInfos(channelId).url);
 		var playUrl;
 		var startOnSecs;
+		
+		function stopDownloading() {
+			player.removeAttribute('src');
+			player.load();
+		}
+
 		songInfoSrc.addEventListener('message', function(event) {
 			songPlay = JSON.parse(event.data);
 			if (songPlay.songId === KILL_SONG_ID) {
 				currentSongId = null;
-				player.removeAttribute('src');
-				player.load();
+				stopDownloading();
 				player.pause();
 			} else {
 				currentSongId = songPlay.songId;
