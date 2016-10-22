@@ -163,9 +163,7 @@ private class MusicRoom(private val id: Int,
   }
 
   private def stopCurrentSong() = {
-    channels.foreach { ch ⇒
-      (ch.pushSong _).tupled(KillSong)
-    }
+    channels.foreach(_.pushSong(KillSong))
     replaceRoomVer(stopSongRoom)
   }
 

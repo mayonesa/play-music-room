@@ -1,6 +1,6 @@
 $(function() {
 	if (!!EventSource) {
-		var KILL_SONG_SECS = -888;
+		var KILL_SONG_ID = -888;
 		var $player = $('audio');
 		var player = $player[0];
 		$player.on('ended', function() { currentSongId = null; });
@@ -10,8 +10,7 @@ $(function() {
 		var startOnSecs;
 		songInfoSrc.addEventListener('message', function(event) {
 			songPlay = JSON.parse(event.data);
-			startOnSecs = songPlay.startTimeInSecs;
-			if (startOnSecs === KILL_SONG_SECS) {
+			if (songPlay.songId === KILL_SONG_ID) {
 				currentSongId = null;
 				player.removeAttribute('src');
 				player.load();
@@ -19,6 +18,7 @@ $(function() {
 			} else {
 				currentSongId = songPlay.songId;
 				playUrl = jsRoutes.controllers.MusicRoomController.playSong(currentSongId).url;			
+				startOnSecs = songPlay.startTimeInSecs;
 				if (startOnSecs !== 0) {
 					playUrl += '#t=' + startOnSecs;
 				}

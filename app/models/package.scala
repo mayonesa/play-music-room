@@ -28,9 +28,9 @@ package object auxiliaries {
 
   private val ClearPlaylistSongId = -999
   private val ClearSong = Song(ClearPlaylistSongId, "", "", 0 seconds, "")
-  private val KillSongTime = -888.seconds
+  private val KillSongId = -888
   private[models] val ClearPlaylist = (ClearSong, false)
-  private[models] val KillSong = (Song(0, "", "", 0 seconds, ""), KillSongTime)
+  private[models] val KillSong = Song(KillSongId, "", "", 0 seconds, "")
 
   def schedule(body: () ⇒ Unit, delay: Duration, scheduler: Timer): TimerTask = {
     val task = timerTask(body)
