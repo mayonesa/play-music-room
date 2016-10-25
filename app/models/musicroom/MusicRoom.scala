@@ -111,17 +111,17 @@ private class MusicRoom(private val id: Int,
 
   private def this(name: String) = this(roomIdGen.incrementAndGet(), name, Playlist(), ParSet.empty[Channel], 0, new ChatBoxImpl, new Timer(), null, null, new AnyRef)
 
-  private def addChannel(channel: Channel) = roomVer(channels + channel)
+  private def addChannel(channel: Channel) = room(channels + channel)
 
-  private def dropChannel(channel: Channel) = roomVer(channels - channel)
+  private def dropChannel(channel: Channel) = room(channels - channel)
 
   private def addSong(song: Song) = {
     val newPlaylist = playlist enqueue song
     if (playlist.isPlaying) {
       publishAdd(song)
-      replaceRoomVer(roomVer(newPlaylist))
+      replaceRoom(room(newPlaylist))
     } else {
-      roomVer(newPlaylist.advance()).play()
+      room(newPlaylist.advance()).play()
     }
   }
 
@@ -135,7 +135,7 @@ private class MusicRoom(private val id: Int,
       if (isMinSkipVotes) {
         skip()
       } else {
-        replaceRoomVer(roomVer(nSkipVotes + 1))
+        replaceRoom(room(nSkipVotes + 1))
       }
     }
 
@@ -165,14 +165,14 @@ private class MusicRoom(private val id: Int,
   private def stopCurrentSong() = {
     val stoppedRoom = stopSongRoom
     channels.foreach(stoppedRoom.pushSong(_, KillSong))
-    replaceRoomVer(stoppedRoom)
+    replaceRoom(stoppedRoom)
   }
 
   private def next(): MusicRoom = next(nSkipVotes)
 
   private def next(newNSkipVs: Int) = {
-    val nextSongRoom = roomVer(playlist.advance(), newNSkipVs)
-    replaceRoomVer(nextSongRoom)
+    val nextSongRoom = room(playlist.advance(), newNSkipVs)
+    replaceRoom(nextSongRoom)
     nextSongRoom
   }
 
@@ -181,7 +181,7 @@ private class MusicRoom(private val id: Int,
     schedNextPlay()
   }
 
-  private def schedNextPlay() = replaceRoomVer(roomVer(roomSchedule(playIfNext, currentSong.length)))
+  private def schedNextPlay() = replaceRoom(room(roomSchedule(playIfNext, currentSong.length)))
 
   private def pushCurrentSong(c: Channel) = pushSong(c, currentSong)
 
@@ -191,7 +191,7 @@ private class MusicRoom(private val id: Int,
   }
 
   private def playIfNext() = lock.synchronized {
-    val room = getLatestRoomVer
+    val room = getLatestRoom
     if (room.playlist.hasNext) {
       room.next().play()
     } else {
@@ -202,7 +202,7 @@ private class MusicRoom(private val id: Int,
   private def onStop() = {
     val stoppedRoom = stopSongRoom
     stoppedRoom.channels.foreach(pushPlaylist)
-    replaceRoomVer(stoppedRoom)
+    replaceRoom(stoppedRoom)
   }
 
   private def pushPlaylist(c: Channel) = c match {
@@ -212,21 +212,21 @@ private class MusicRoom(private val id: Int,
 
   private def currentSong = playlist.currentSongOpt.get
 
-  private def roomVer(newSkipVs: Int): MusicRoom = roomVer(playlist, newSkipVs)
+  private def room(newSkipVs: Int): MusicRoom = room(playlist, newSkipVs)
 
-  private def roomVer(newPlaylist: Playlist): MusicRoom = roomVer(newPlaylist, nSkipVotes)
+  private def room(newPlaylist: Playlist): MusicRoom = room(newPlaylist, nSkipVotes)
 
-  private def roomVer(newChannels: ParSet[Channel]) = MusicRoom(id, name, playlist, newChannels, nSkipVotes, chatBox, roomScheduler, futurePlay, lastPlayTime, lock)
+  private def room(newChannels: ParSet[Channel]) = MusicRoom(id, name, playlist, newChannels, nSkipVotes, chatBox, roomScheduler, futurePlay, lastPlayTime, lock)
 
-  private def roomVer(newFuturePlay: TimerTask) = MusicRoom(id, name, playlist, channels, nSkipVotes, chatBox, roomScheduler, newFuturePlay, currentTime, lock)
+  private def room(newFuturePlay: TimerTask) = MusicRoom(id, name, playlist, channels, nSkipVotes, chatBox, roomScheduler, newFuturePlay, currentTime, lock)
 
-  private def roomVer(newPlaylist: Playlist, newSkipVs: Int) = MusicRoom(id, name, newPlaylist, channels, newSkipVs, chatBox, roomScheduler, futurePlay, lastPlayTime, lock)
+  private def room(newPlaylist: Playlist, newSkipVs: Int) = MusicRoom(id, name, newPlaylist, channels, newSkipVs, chatBox, roomScheduler, futurePlay, lastPlayTime, lock)
 
   private def stopSongRoom = MusicRoom(id, name, playlist.stop, channels, 0, chatBox, roomScheduler, null, null, lock)
 
   private def roomSchedule(body: () ⇒ Unit, delay: Duration) = schedule(body, delay, roomScheduler)
 
-  private def getLatestRoomVer = roomRepo(id)
+  private def getLatestRoom = roomRepo(id)
 
-  private def replaceRoomVer(roomVer: MusicRoom) = putRoom(roomVer)
+  private def replaceRoom(room: MusicRoom) = putRoom(room)
 }
