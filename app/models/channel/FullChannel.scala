@@ -2,8 +2,9 @@ package models.channel
 
 import models.chatbox.client.ChatBoxFullClient
 import models.playlist.PlaylistViewer
+import PlaylistViewer.playlistView
 import models.song.Song
-import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlayableSong, ClearPlaylist }
+import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlayableSong, ClearPlaylist, PlaylistInfo }
 import models.channel.FullChannel.{ SongPush, PlaylistPush, ChatPush, logger }
 
 import collection.mutable
@@ -26,13 +27,13 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     chatPush.addToBuff((cn, e))
     chatPush.push()
   }
-  protected def postPlaylistInit() = playlistPush.lock.synchronized(sendPlaylist())
-  protected def postSongPush(): Unit = playlistPush.lock.synchronized {
+  protected[models] def initPlaylist(pl: PlaylistInfo) = playlistPush.lock.synchronized(sendPlaylist(pl))
+  protected[models] def onSongPush(pl: PlaylistInfo) = playlistPush.lock.synchronized {
     playlistPush.toClear()
     pushRequestedPlaylistBuff()
-    sendPlaylist()
+    sendPlaylist(pl)
   }
-  protected def postSongAdd(song: Song) = playlistPush.lock.synchronized {
+  protected[models] def onSongAdd(song: Song) = playlistPush.lock.synchronized {
     playlistPush.addToBuff((song, false))
     pushRequestedPlaylistBuff()
   }
@@ -44,8 +45,8 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     }
   }
 
-  private def sendPlaylist() = {
-    playlistView.map(playlistPush.addToBuff(_)).force
+  private def sendPlaylist(pli: PlaylistInfo) = {
+    playlistView(pli).map(playlistPush.addToBuff(_)).force
     pushRequestedPlaylistBuff()
   }
 

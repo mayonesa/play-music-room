@@ -3,23 +3,24 @@ $(function() {
 		var KILL_SONG_ID = -888;
 		var $player = $('audio');
 		var player = $player[0];
-		$player.on('ended', function() { currentSongId = null; });
 		var songPlay;
 		var songInfoSrc = new EventSource(jsRoutes.controllers.MusicRoomController.sseSongInfos(channelId).url);
 		var playUrl;
 		var startOnSecs;
-		
-		function stopDownloading() {
+		var stopDownloading = function() {
 			player.removeAttribute('src');
 			player.load();
-		}
+		};
+		var stop = function() {
+			currentSongId = null;
+			stopDownloading();
+			player.pause();
+		};
 
 		songInfoSrc.addEventListener('message', function(event) {
 			songPlay = JSON.parse(event.data);
 			if (songPlay.songId === KILL_SONG_ID) {
-				currentSongId = null;
-				stopDownloading();
-				player.pause();
+				stop();
 			} else {
 				currentSongId = songPlay.songId;
 				playUrl = jsRoutes.controllers.MusicRoomController.playSong(currentSongId).url;			

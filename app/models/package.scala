@@ -12,7 +12,7 @@ import java.time.ZonedDateTime
 import play.api.Logger
 
 package object auxiliaries {
-  type PlaylistWithCurrentSongIndex = (Queue[Song], Int)
+  type PlaylistInfo = (Queue[Song], Int, Playing)
   type PlaylistView = SeqView[PlayableSong, Seq[_]]
   type PlayableSong = (Song, Playing)
   type Playing = Boolean
