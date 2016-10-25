@@ -9,8 +9,8 @@ object MaxSizeBuffer {
 
 class MaxSizeBuffer[T](q: Queue[T], maxSize: Int) {
   def enqueue(t: T): MaxSizeBuffer[T] = {
-    val newBuff = if (q.size == maxSize) q drop 1 else q
-    MaxSizeBuffer(newBuff enqueue t, maxSize)
+    val newQ = if (q.size == maxSize) q drop 1 else q
+    MaxSizeBuffer(newQ enqueue t, maxSize)
   }
   def dequeue: (T, MaxSizeBuffer[T]) = {
     val (t, newQ) = q.dequeue
