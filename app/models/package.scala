@@ -26,6 +26,8 @@ package object auxiliaries {
 
   private val logger = Logger(getClass)
 
+  val DefaultChatHistorySize = 1000 // if increased from 1000, must mod ChatBoxImpl.log accordingly in order to be effective
+  val DefaultPlaylistSize = 500
   private val ClearPlaylistSongId = -999
   private val ClearSong = Song(ClearPlaylistSongId, "", "", 0 seconds, "")
   private val KillSongId = -888

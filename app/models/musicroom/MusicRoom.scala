@@ -181,7 +181,7 @@ private class MusicRoom(private val id: Int,
     schedNextPlay()
   }
 
-  private def schedNextPlay() = replaceRoom(room(roomSchedule(playIfNext, currentSong.length)))
+  private def schedNextPlay() = replaceRoom(room(roomSchedule(processNext, currentSong.length)))
 
   private def pushCurrentSong(c: Channel) = pushSong(c, currentSong)
 
@@ -190,7 +190,7 @@ private class MusicRoom(private val id: Int,
     pushPlaylist(c)
   }
 
-  private def playIfNext() = lock.synchronized {
+  private def processNext() = lock.synchronized {
     val room = getLatestRoom
     if (room.playlist.hasNext) {
       room.next().play()
@@ -201,7 +201,7 @@ private class MusicRoom(private val id: Int,
 
   private def onStop() = {
     val stoppedRoom = stopSongRoom
-    stoppedRoom.channels.foreach(pushPlaylist)
+    stoppedRoom.channels.foreach(stoppedRoom.pushPlaylist)
     replaceRoom(stoppedRoom)
   }
 

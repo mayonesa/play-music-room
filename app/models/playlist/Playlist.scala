@@ -1,7 +1,7 @@
 package models.playlist
 
 import models.song.Song
-import models.auxiliaries.{ PlaylistInfo, Playing }
+import models.auxiliaries.{ PlaylistInfo, Playing, DefaultPlaylistSize }
 
 import collection.immutable.Queue
 
@@ -11,7 +11,7 @@ private[models] object Playlist {
   private def apply(list: Queue[Song], currentSongIndex: Int, playing: Playing, maxSize: Int) = new Playlist(list, currentSongIndex, playing, maxSize)
 }
 
-private[models] class Playlist(list: Queue[Song], currentSongIndex: Int, playing: Playing, maxSize: Int = 1000) {
+private[models] class Playlist(list: Queue[Song], currentSongIndex: Int, playing: Playing, maxSize: Int = DefaultPlaylistSize) {
   private def this(maxSize: Int) = this(Queue.empty[Song], -1, false, maxSize)
   private def this() = this(Queue.empty[Song], -1, false)
 

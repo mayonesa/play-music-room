@@ -4,10 +4,10 @@ import models.chatbox.client.ChatBoxFullClient
 import models.playlist.PlaylistViewer
 import PlaylistViewer.playlistView
 import models.song.Song
-import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlayableSong, ClearPlaylist, PlaylistInfo }
+import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlayableSong, ClearPlaylist, PlaylistInfo, DefaultChatHistorySize, DefaultPlaylistSize }
 import models.channel.FullChannel.{ SongPush, PlaylistPush, ChatPush, logger }
+import models.MaxSizeBuffer
 
-import collection.mutable
 import annotation.tailrec
 import concurrent.duration._
 import org.reactivestreams.{ Publisher, Subscriber, Subscription }
@@ -46,7 +46,7 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
   }
 
   private def sendPlaylist(pli: PlaylistInfo) = {
-    playlistView(pli).map(playlistPush.addToBuff(_)).force
+    playlistView(pli).map(playlistPush.addToBuff).force
     pushRequestedPlaylistBuff()
   }
 
@@ -67,15 +67,7 @@ object FullChannel {
 
   def addChannel(name: String): Channel = Channel.addChannel(FullChannel(name))
 
-  private class SongPush extends Push[(Int, Duration)] {
-    override protected[FullChannel] def push() = {
-      onNext(buff.dequeueAll(_ ⇒ true).last)
-      decrementReqs()
-    }
-    override protected[FullChannel] def addToBuff(songPlay: (Int, Duration)) = {
-      buff.clear()
-      buff.enqueue(songPlay)
-    }
+  private class SongPush extends Push[(Int, Duration)](1) {
     override protected[FullChannel] def writes = new Writes[(Int, Duration)] {
       def writes(songPlay: (Int, Duration)) = songPlay match {
         case (songId, startTime) ⇒
@@ -86,9 +78,9 @@ object FullChannel {
     }
   }
 
-  private class PlaylistPush extends Push[PlayableSong] {
+  private class PlaylistPush extends Push[PlayableSong](DefaultPlaylistSize) {
     private[FullChannel] def toClear() = {
-      buff.clear()
+      clearBuff()
       addToBuff(ClearPlaylist)
     }
     override protected[FullChannel] def writes = new Writes[PlayableSong] {
@@ -104,7 +96,7 @@ object FullChannel {
     }
   }
 
-  private class ChatPush extends Push[ChatBoxClientNameEvent] {
+  private class ChatPush extends Push[ChatBoxClientNameEvent](DefaultChatHistorySize) {
     override protected[FullChannel] def writes = new Writes[ChatBoxClientNameEvent] {
       def writes(cbcne: ChatBoxClientNameEvent) = cbcne match {
         case (author, chatEvent) ⇒
@@ -116,20 +108,23 @@ object FullChannel {
     }
   }
 
-  private trait Push[T] {
-    private[FullChannel] val buff = mutable.Queue.empty[T]
+  private abstract class Push[T](maxBuffSize: Int) {
+    private var buff = MaxSizeBuffer[T](maxBuffSize)
     private[FullChannel] val lock = new AnyRef
     private[FullChannel] val pub = new PublisherImpl
     private var sub: Subscriber[_ >: JsValue] = _
     private var unfulfilledRequests: Long = _
 
     protected[FullChannel] implicit def writes: Writes[T]
-    protected[FullChannel] def addToBuff(t: T) = buff.enqueue(t)
-    protected[FullChannel] def push() = {
+    protected[FullChannel] def addToBuff(t: T) = buff = buff enqueue t
+    private[FullChannel] def clearBuff() = buff = MaxSizeBuffer[T](maxBuffSize)
+    private[FullChannel] def push() = {
       @tailrec
       def loop(): Unit =
         if (requested && !buff.isEmpty) {
-          onNext(buff.dequeue)
+          val (t, newBuff) = buff.dequeue
+          buff = newBuff
+          onNext(t)
           decrementReqs()
           loop()
         }
@@ -137,9 +132,8 @@ object FullChannel {
     }
     private[FullChannel] def readyForPush = !buff.isEmpty
     private[FullChannel] def requested = unfulfilledRequests > 0
-    protected[FullChannel] def onNext(t: T) = sub.onNext(Json.toJson(t))
-    protected[FullChannel] def decrementReqs() = unfulfilledRequests -= 1
-
+    private[FullChannel] def onNext(t: T) = sub.onNext(Json.toJson(t))
+    private[FullChannel] def decrementReqs() = unfulfilledRequests -= 1
     private[FullChannel] class PublisherImpl extends Publisher[JsValue] {
       def subscribe(s: Subscriber[_ >: JsValue]): Unit = {
         sub = s
