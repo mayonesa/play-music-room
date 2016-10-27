@@ -16,37 +16,34 @@
 	    routes.javascript.MusicRoomController.sseSongInfos,
 	    routes.javascript.MusicRoomController.playSong
 	)    
-    <div id="libContainer">
+    <div id="libContainer" style="display: inline-block;">
         <ul>
         @musicLibrary.map { song =>
-            <li>@song.name - @song.artist (@song.length)<input type="button" value="Add" onclick="addSong(@song.id);"></li>
+            <li>@song.name - @song.artist (@song.length)<input type="button" class="addButton" value="Add" onclick="addSong(@song.id);"></li>
         }
         </ul>
     </div>
-    <div id="playerContainer">
+    <div id="playerContainer" style="display: none;">
     	<audio autoplay>
     		<p>Your browser does not support this audio player/format. Try from a more current/common one.</p>
     	</audio>
     </div>
     @if(channel.isInstanceOf[models.playlist.PlaylistViewer]) {
-    	<div id="playlistContainer">
+    	<div id="playlistContainer" style="display: inline-block;">
     		<ul id="playlist">
     		</ul>
     	</div>
     }
-    <div id="voteToSkipContainer"><button id="voteButton" disabled="disabled">Vote to Skip to Next Song</button></div>
+    <div id="voteToSkipContainer"><button id="voteButton" class="disabledButton" style="position: relative; left: 400px; bottom: 8px; top: -15px;">Vote to Skip to Next Song</button></div>
     @if(channel.isInstanceOf[models.chatbox.client.ChatBoxListener]) {
 	    <div id="chatLog"></div>
-		@if(channel.isInstanceOf[models.chatbox.client.ChatBoxFullClient]) {
-   			<div id="chatContainer">
-				<label>talk
-					<input type="text" id="text" required="required">
-					<input type="button" value="Send" class="buttons" onclick="chat()"/>
-				</label>
-		 	</div>
- 		}
- 	}
-    <div id="leaveRoomContainer"><button onclick="leaveRoom();">Leave Room</button></div>
+			@if(channel.isInstanceOf[models.chatbox.client.ChatBoxFullClient]) {
+ 				<div id="chatContainer" style="width: 80%; display: inline-block;" >
+					<input type="text" id="text" placeholder="talk (press <return> to send)" required="required" onkeydown="ifReturnChat()" />
+		 		</div>
+ 			}
+	 	}
+    <div id="leaveRoomContainer"><button class="blueButton" onclick="leaveRoom();" style="position: relative; top: 20px; left: 400px;">Leave Room =></button></div>
     <script>
     var channelId = @channel.id;
     var $voteButton;
@@ -55,8 +52,8 @@
     $(function() {
     	$voteButton = $("#voteButton");
     	$voteButton.click(function() {
-        	if (currentSongId) {
-            	this.disabled = true;
+        	if (currentSongId && this.className != "disabledButton") {
+            	this.className = "disabledButton";
             	$.ajax(jsRoutes.controllers.MusicRoomController.voteToSkip(channelId, currentSongId));
         	};
     	});
@@ -68,30 +65,23 @@
     function addSong(songId) {
         $.ajax(jsRoutes.controllers.MusicRoomController.addSong(channelId, songId))
     };
-    function chat() {
-        $.post(jsRoutes.controllers.MusicRoomController.chat(channelId),
-        	{ 
-        		"text": $chat.val() 
-        	},
-        	function() { 
-        		$chat.val("")
-        	}
-        );
-    };
     function leaveRoom() {
         location = jsRoutes.controllers.MusicRoomController.leaveRoom(channelId).url
     };
     function onSongPlay() {
-		if ($voteButton && $voteButton.attr('disabled')) {
-			$voteButton.attr('disabled', false);
+		if ($voteButton && $voteButton.attr('class') === 'disabledButton') {
+			$voteButton.addClass('blueButton').removeClass('disabledButton');
 		}
     };
-    </script>
-    <script src="@routes.Assets.at("javascripts/player.js")" type="text/javascript"></script>
-    @if(channel.isInstanceOf[models.playlist.PlaylistViewer]) {
-    	<script src="@routes.Assets.at("javascripts/playlist.js")" type="text/javascript"></script>
-    }
-    @if(channel.isInstanceOf[models.chatbox.client.ChatBoxListener]) {
-    	<script src="@routes.Assets.at("javascripts/chatLog.js")" type="text/javascript"></script>
+  </script>
+  <script src="@routes.Assets.at("javascripts/player.js")" type="text/javascript"></script>
+  @if(channel.isInstanceOf[models.playlist.PlaylistViewer]) {
+  	<script src="@routes.Assets.at("javascripts/playlist.js")" type="text/javascript"></script>
+  }
+  @if(channel.isInstanceOf[models.chatbox.client.ChatBoxListener]) {
+  	<script src="@routes.Assets.at("javascripts/chatLog.js")" type="text/javascript"></script>
+    @if(channel.isInstanceOf[models.chatbox.client.ChatBoxFullClient]) {
+    	<script src="@routes.Assets.at("javascripts/chat.js")" type="text/javascript"></script>
+		}
 	}
 }

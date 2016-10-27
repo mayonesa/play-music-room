@@ -4,7 +4,7 @@
 
 @main {
 
-    <h2>Welcome to Music Appreciation Class</h2>
+    <h2>Welcome to Music-Listening Room</h2>
     @form(routes.HomeController.join()) {
     	@entryForm.globalErrors.map { error =>
             <p class="error">
@@ -15,12 +15,12 @@
     	@inputText(entryForm("channelName"), '_label -> "nom de plume", 'required -> "required", '_help -> "The name that others in the room will see (try to be unique)")
 		@if(!rooms.isEmpty) {
 			@select(entryForm("joinRoomIdOpt"), options(rooms), '_default -> "select (if joining) a pre-existing room", '_label -> "existing rooms", '_help -> "Choose room to join if not wanting start a new one (below)")
-    		@inputText(entryForm("newRoomNameOpt"), '_label -> "new-room name", '_help -> "Name of the new room to create (if not joining a pre-existing one listed above)")
+    		@inputText(entryForm("newRoomNameOpt"), '_label -> "preexisting-room name", '_help -> "Name of the new room to create (if not joining a pre-existing one listed above)")
  		} else {
     		@inputText(entryForm("newRoomNameOpt"), '_label -> "new-room name", 'required -> "required", '_help -> "Name of the new room to create")
  		}
- 		<div class="buttons">
-			<input type="submit" value="Join"/>
+ 		<div>
+			<input type="submit" class="blueButton" value="Join" style="position: relative; left: -400px; top: 70px;" />
 		</div>
     }
 }

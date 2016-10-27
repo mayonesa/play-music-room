@@ -18,6 +18,7 @@ $(function() {
 				}
 				var li = '<li id="' + song.id + '" class="' + liClass + '">' + song.name + ' - ' + song.artist + ' (' + song.duration + ')</li>';
 				$playlist.append(li);
+				$playlist.scrollTop($playlist.prop('scrollHeight'));
 			}
 		});
 	}
