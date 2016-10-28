@@ -72,15 +72,20 @@ object MusicRoom {
       case _                  ⇒
     }
 
-    channel.onReceive {
-      case AddSong(song)        ⇒ roomLock.synchronized(roomRepo(roomId).addSong(song))
-      case VoteToSkipSong(song) ⇒ roomLock.synchronized(roomRepo(roomId).voteForSkip(song))
-      case LeaveRoom ⇒
-        roomLock.synchronized(putRoom(roomRepo(roomId) dropChannel channel))
-        channel match {
-          case l: ChatBoxListener ⇒ chatBox.removeListener(l)
-          case _                  ⇒
-        }
+    channel.onReceive { message ⇒
+      roomLock.synchronized {
+        val r = roomRepo(roomId)
+        putRoom(message match {
+          case AddSong(song)        ⇒ r.addSong(song)
+          case VoteToSkipSong(song) ⇒ r.voteForSkip(song)
+          case LeaveRoom ⇒
+            channel match {
+              case l: ChatBoxListener ⇒ chatBox.removeListener(l)
+              case _                  ⇒
+            }
+            r dropChannel channel
+        })
+      }
     }
     room
   }
@@ -119,7 +124,7 @@ private class MusicRoom(private val id: Int,
     val newPlaylist = playlist enqueue song
     if (playlist.isPlaying) {
       publishAdd(song)
-      replaceRoom(room(newPlaylist))
+      room(newPlaylist)
     } else {
       room(newPlaylist.advance()).play()
     }
@@ -134,10 +139,8 @@ private class MusicRoom(private val id: Int,
     if (currentSong == song) {
       if (isMinSkipVotes) {
         skip()
-      } else {
-        replaceRoom(room(nSkipVotes + 1))
-      }
-    }
+      } else room(nSkipVotes + 1)
+    } else this
 
   private def playCurrentInMidstream(ch: Channel) = if (playlist.isPlaying) {
     val currentSongElapsed = currentTime - lastPlayTime
@@ -165,45 +168,43 @@ private class MusicRoom(private val id: Int,
   private def stopCurrentSong() = {
     val stoppedRoom = stopSongRoom
     channels.foreach(stoppedRoom.pushSong(_, KillSong))
-    replaceRoom(stoppedRoom)
+    stoppedRoom
   }
 
   private def next(): MusicRoom = next(nSkipVotes)
 
-  private def next(newNSkipVs: Int) = {
-    val nextSongRoom = room(playlist.advance(), newNSkipVs)
-    replaceRoom(nextSongRoom)
-    nextSongRoom
-  }
+  private def next(newNSkipVs: Int) = room(playlist.advance(), newNSkipVs)
 
-  private def play(): Unit = {
+  private def play(): MusicRoom = {
     channels.foreach(pushCurrentSong)
+    chatBox.chat(currentSong)
     schedNextPlay()
   }
 
-  private def schedNextPlay() = replaceRoom(room(roomSchedule(processNext, currentSong.length)))
+  private def schedNextPlay() = room(roomSchedule(processNext, currentSong.length))
 
   private def pushCurrentSong(c: Channel) = pushSong(c, currentSong)
 
   private def pushSong(c: Channel, s: Song) = {
     c.pushSong(s)
     pushPlaylist(c)
-    chatBox.chat(s)
   }
 
   private def processNext() = lock.synchronized {
-    val room = getLatestRoom
-    if (room.playlist.hasNext) {
-      room.next().play()
-    } else {
-      onStop()
+    val room = latestRoom
+    putRoom {
+      if (room.playlist.hasNext) {
+        room.next().play()
+      } else {
+        room.onStop()
+      }
     }
   }
 
   private def onStop() = {
     val stoppedRoom = stopSongRoom
     stoppedRoom.channels.foreach(stoppedRoom.pushPlaylist)
-    replaceRoom(stoppedRoom)
+    stoppedRoom
   }
 
   private def pushPlaylist(c: Channel) = c match {
@@ -227,7 +228,5 @@ private class MusicRoom(private val id: Int,
 
   private def roomSchedule(body: () ⇒ Unit, delay: Duration) = schedule(body, delay, roomScheduler)
 
-  private def getLatestRoom = roomRepo(id)
-
-  private def replaceRoom(room: MusicRoom) = putRoom(room)
+  private def latestRoom = roomRepo(id)
 }
