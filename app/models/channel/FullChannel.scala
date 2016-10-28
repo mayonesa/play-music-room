@@ -90,7 +90,7 @@ object FullChannel {
             "id" -> song.id,
             "name" -> song.name,
             "artist" -> song.artist,
-            "duration" -> song.length.toString,
+            "duration" -> song.timeStr,
             "current" -> current)
       }
     }

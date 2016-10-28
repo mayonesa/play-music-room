@@ -19,7 +19,7 @@
     <div id="libContainer" style="display: inline-block;">
         <ul>
         @musicLibrary.map { song =>
-            <li>@song.name - @song.artist (@song.length)<input type="button" class="addButton" value="Add" onclick="addSong(@song.id);"></li>
+            <li>@song.name - @song.artist (@song.timeStr)<input type="button" class="addButton" value="Add" onclick="addSong(@song.id);"></li>
         }
         </ul>
     </div>
@@ -34,16 +34,16 @@
     		</ul>
     	</div>
     }
-    <div id="voteToSkipContainer"><button id="voteButton" class="disabledButton" style="position: relative; left: 400px; bottom: 8px; top: -15px;">Vote to Skip to Next Song</button></div>
+    <div id="voteToSkipContainer"><button id="voteButton" class="disabledButton" style="position: relative; left: 330px; bottom: 8px; top: -15px;">Vote to Skip to Next Song</button></div>
     @if(channel.isInstanceOf[models.chatbox.client.ChatBoxListener]) {
 	    <div id="chatLog"></div>
 			@if(channel.isInstanceOf[models.chatbox.client.ChatBoxFullClient]) {
- 				<div id="chatContainer" style="width: 80%; display: inline-block;" >
+ 				<div id="chatContainer" style="width: 884px; display: inline-block;" >
 					<input type="text" id="text" placeholder="talk (press <return> to send)" onkeydown="ifReturnChat(event)" />
 		 		</div>
  			}
 	 	}
-    <div id="leaveRoomContainer"><button class="blueButton" onclick="leaveRoom();" style="position: relative; top: 20px; left: 400px;">Leave Room =></button></div>
+    <div id="leaveRoomContainer"><button class="blueButton" onclick="leaveRoom();" style="position: relative; top: 20px; left: 330px;">Leave Room =></button></div>
     <script>
 	    var channelId = @channel.id;
 	    var $voteButton;
