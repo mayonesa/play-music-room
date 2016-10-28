@@ -6,6 +6,6 @@ case class Song(id: Int, name: String, artist: String, length: Duration, locatio
   lazy val timeStr = getTimeStr
   private def getTimeStr = {
     val mins = length.toMinutes
-    mins + ":" + (length.toSeconds - Duration(mins, MINUTES).toSeconds)
+    f"$mins%01d:${(length.toSeconds - Duration(mins, MINUTES).toSeconds)}%02d"
   }
 }
