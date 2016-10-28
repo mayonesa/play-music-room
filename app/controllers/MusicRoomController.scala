@@ -28,9 +28,9 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
     Ok(views.html.musicroom(Channel(channelId), songs.allSongs))
   }
 
-  def addSong(channelId: Int, songId: Int) = react(channelId, AddSong(songs(songId)))
+  def addSong(channelId: Int, songId: Int) = react(channelId, songId, AddSong)
 
-  def voteToSkip(channelId: Int, songId: Int) = react(channelId, VoteToSkipSong(songs(songId)))
+  def voteToSkip(channelId: Int, songId: Int) = react(channelId, songId, VoteToSkipSong)
 
   def leaveRoom(channelId: Int) = Action {
     val ch = Channel(channelId)
@@ -60,8 +60,8 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
 
   def sseChats(channelId: Int) = sse(channelId, _.chatPub)
 
-  private def react(channelId: Int, msg: Message) = Action {
-    Future(Channel(channelId).msgHandler(msg))
+  private def react(channelId: Int, songId: Int, msgr: Song ⇒ Message) = Action {
+    Future(Channel(channelId).msgHandler(msgr(songs(songId))))
     Accepted
   }
 
