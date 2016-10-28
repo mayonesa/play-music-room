@@ -15,7 +15,7 @@
     	@inputText(entryForm("channelName"), '_label -> "nom de plume", 'required -> "required", '_help -> "The name that others in the room will see (try to be unique)")
 		@if(!rooms.isEmpty) {
 			@select(entryForm("joinRoomIdOpt"), options(rooms), '_default -> "select (if joining) a pre-existing room", '_label -> "existing rooms", '_help -> "Choose room to join if not wanting start a new one (below)")
-    		@inputText(entryForm("newRoomNameOpt"), '_label -> "preexisting-room name", '_help -> "Name of the new room to create (if not joining a pre-existing one listed above)")
+    		@inputText(entryForm("newRoomNameOpt"), '_label -> "new-room name", '_help -> "Name of the new room to create (if not joining a pre-existing one listed above)")
  		} else {
     		@inputText(entryForm("newRoomNameOpt"), '_label -> "new-room name", 'required -> "required", '_help -> "Name of the new room to create")
  		}
