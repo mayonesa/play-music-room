@@ -188,6 +188,7 @@ private class MusicRoom(private val id: Int,
   private def pushSong(c: Channel, s: Song) = {
     c.pushSong(s)
     pushPlaylist(c)
+    chatBox.chat(s)
   }
 
   private def processNext() = lock.synchronized {

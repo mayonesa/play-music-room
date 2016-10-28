@@ -5,6 +5,7 @@ import models.chatbox.client._
 import models.chatbox.client.ChatBoxListener
 import models.chatbox.client.ChatBoxListenerWithHist
 import models.chatbox.client.ChatBoxFullClient
+import models.song.Song
 
 import collection.parallel
 import collection.mutable
@@ -24,9 +25,11 @@ private[models] class ChatBoxImpl extends ChatBox with ClientChatBox {
     }
   }
 
-  private[chatbox] def chat(sender: ChatBoxClientName, t: Text): Unit = {
+  private[models] def chat(s: Song) = chat(s.artist, s.name, true)
+
+  private[chatbox] def chat(sender: ChatBoxClientName, t: Text, isSong: Boolean) = {
     val n = now()
-    listeners.synchronized(listeners.foreach(_.notify(sender, (t, n))))
+    listeners.synchronized(listeners.foreach(_.notify(sender, (t, n, isSong))))
   }
 
   private[chatbox] def setUp(l: ChatBoxListener): Unit = listeners.synchronized {

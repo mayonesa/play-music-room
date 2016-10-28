@@ -20,7 +20,7 @@ package object auxiliaries {
   type ChatBoxSubscriber = mutable.Subscriber[ChatEvent, ChatBoxClientName] // for `log` to listen in on chats
   type ChatHistory = Iterator[ChatBoxClientNameEvent]
   type ChatBoxClientNameEvent = (ChatBoxClientName, ChatEvent)
-  type ChatEvent = (Text, ZonedDateTime)
+  type ChatEvent = (Text, ZonedDateTime, Boolean)
   type ChatBoxClientName = String
   type Text = String
 

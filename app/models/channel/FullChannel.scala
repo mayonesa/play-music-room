@@ -103,7 +103,8 @@ object FullChannel {
           Json.obj(
             "author" -> author,
             "text" -> chatEvent._1,
-            "timestamp" -> chatEvent._2)
+            "timestamp" -> chatEvent._2,
+            "isSong" -> chatEvent._3)
       }
     }
   }
