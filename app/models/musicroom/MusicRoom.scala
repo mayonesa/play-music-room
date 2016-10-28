@@ -72,20 +72,15 @@ object MusicRoom {
       case _                  ⇒
     }
 
-    channel.onReceive { message ⇒
-      roomLock.synchronized {
-        val r = roomRepo(roomId)
-        putRoom(message match {
-          case AddSong(song)        ⇒ r.addSong(song)
-          case VoteToSkipSong(song) ⇒ r.voteForSkip(song)
-          case LeaveRoom ⇒
-            channel match {
-              case l: ChatBoxListener ⇒ chatBox.removeListener(l)
-              case _                  ⇒
-            }
-            r dropChannel channel
-        })
-      }
+    channel.onReceive {
+      case AddSong(song)        ⇒ roomLock.synchronized(putRoom(roomRepo(roomId).addSong(song)))
+      case VoteToSkipSong(song) ⇒ roomLock.synchronized(roomRepo(roomId).voteForSkip(song).foreach(putRoom))
+      case LeaveRoom ⇒
+        roomLock.synchronized(putRoom(roomRepo(roomId) dropChannel channel))
+        channel match {
+          case l: ChatBoxListener ⇒ chatBox.removeListener(l)
+          case _                  ⇒
+        }
     }
     room
   }
@@ -137,10 +132,12 @@ private class MusicRoom(private val id: Int,
    */
   private def voteForSkip(song: Song) =
     if (currentSong == song) {
-      if (isMinSkipVotes) {
-        skip()
-      } else room(nSkipVotes + 1)
-    } else this
+      Some {
+        if (isMinSkipVotes) {
+          skip()
+        } else room(nSkipVotes + 1)
+      }
+    } else None
 
   private def playCurrentInMidstream(ch: Channel) = if (playlist.isPlaying) {
     val currentSongElapsed = currentTime - lastPlayTime
