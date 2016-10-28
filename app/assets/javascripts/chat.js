@@ -8,8 +8,9 @@ function chat() {
     	}
     );
 }
-function ifReturnChat() {
-	if(event.keyCode == 13) {
+function ifReturnChat(e) {
+	var code = e.keyCode ? e.keyCode : e.which;
+	if(code === 13) {
 		chat();
 	}
 }

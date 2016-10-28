@@ -39,7 +39,7 @@
 	    <div id="chatLog"></div>
 			@if(channel.isInstanceOf[models.chatbox.client.ChatBoxFullClient]) {
  				<div id="chatContainer" style="width: 80%; display: inline-block;" >
-					<input type="text" id="text" placeholder="talk (press <return> to send)" required="required" onkeydown="ifReturnChat()" />
+					<input type="text" id="text" placeholder="talk (press <return> to send)" onkeydown="ifReturnChat(event)" />
 		 		</div>
  			}
 	 	}
