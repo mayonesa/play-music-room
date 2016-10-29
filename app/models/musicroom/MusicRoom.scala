@@ -72,15 +72,20 @@ object MusicRoom {
       case _                  ⇒
     }
 
-    channel.onReceive {
-      case AddSong(song)        ⇒ roomLock.synchronized(putRoom(roomRepo(roomId).addSong(song)))
-      case VoteToSkipSong(song) ⇒ roomLock.synchronized(roomRepo(roomId).voteForSkip(song).foreach(putRoom))
-      case LeaveRoom ⇒
-        roomLock.synchronized(putRoom(roomRepo(roomId) dropChannel channel))
-        channel match {
-          case l: ChatBoxListener ⇒ chatBox.removeListener(l)
-          case _                  ⇒
+    channel.onReceive { message ⇒
+      {
+        val r = roomRepo(roomId)
+        message match {
+          case AddSong(song)        ⇒ roomLock.synchronized(putRoom(r.addSong(song)))
+          case VoteToSkipSong(song) ⇒ roomLock.synchronized(r.voteForSkip(song).foreach(putRoom))
+          case LeaveRoom ⇒
+            roomLock.synchronized(putRoom(r dropChannel channel))
+            channel match {
+              case l: ChatBoxListener ⇒ chatBox.removeListener(l)
+              case _                  ⇒
+            }
         }
+      }
     }
     room
   }
