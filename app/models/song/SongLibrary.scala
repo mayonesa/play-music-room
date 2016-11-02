@@ -22,7 +22,6 @@ class SongLibrary @Inject() (system: ActorSystem) {
     (6 -> Song(6, "Cheek To Cheek", "Ella Fitzgerald & Louis Armstrong", 355 seconds, commonPath + "EllaFitzgerald&LouisArmstrong-CheekToCheek.mp3")),
     (7 -> Song(7, "Helplessness Blues", "Fleet Foxes", 304 seconds, commonPath + "FleetFoxes-HelplessnessBlues.mp3")),
     (8 -> Song(8, "Wouldn't It Be Nice", "Beach Boys", 153 seconds, commonPath + "BeachBoys-Wouldn'tItBeNice.mp3")),
-    (9 -> Song(9, "Furr", "Blitzen Trapper", 248 seconds, commonPath + "Furr-BlitzenTrapper.mp3")),
     (11 -> Song(11, "The Funeral", "Band of Horses", 326 seconds, commonPath + "BandOfHorses-TheFuneral.mp3")),
     (12 -> Song(12, "Nabucco: Chorus of the Hebrew Slaves", "L.P.O.", 299 seconds, commonPath + "Nabucco_Chorus_Hebrew_Slaves.mp3")),
     (13 -> Song(13, "I'll Believe in Anything", "Wolf Parade", 275 seconds, commonPath + "WolfParade-I'llBelieveInAnything.mp3")),
