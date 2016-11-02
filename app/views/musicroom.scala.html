@@ -36,7 +36,7 @@
     }
     <div id="voteToSkipContainer"><button id="voteButton" class="disabledButton" style="position: relative; left: 330px; bottom: 8px; top: -15px;">Vote to Skip to Next Song</button></div>
     @if(channel.isInstanceOf[models.chatbox.client.ChatBoxListener]) {
-			<div style="position: relative; left: 380px; font-size: small;"><input id="songFilter" type="checkbox"> filter songs</div>
+			<div style="position: relative; left: 380px; font-size: small;"><input id="showSongs" type="checkbox" checked> songs</div>
 	    <div id="chatLog"></div>
 			@if(channel.isInstanceOf[models.chatbox.client.ChatBoxFullClient]) {
  				<div id="chatContainer" style="width: 884px; display: inline-block;" >
