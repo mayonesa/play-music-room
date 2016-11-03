@@ -61,7 +61,7 @@ ul {
     padding: 20px;
 		list-style-type: none;
 		width: 411px;
-		height: 250px;
+		height: 258px;
 		overflow: scroll;
 		
 		li {
@@ -127,12 +127,13 @@ input[type=text]:focus {
 }
 
 .song {
-	color: yellow;
+	color: pink;
 }
 
 #chatLog {
-	display: inline-block;
-  width: 884px;
+  width: 872px;
+	position: relative;
+	left: 140px;
   padding: 12px 20px;
   box-sizing: border-box;
   border: 1px solid #555;
@@ -145,4 +146,25 @@ input[type=text]:focus {
 #chatLogItem {
 	text-align: left;
 	font-size: 12px;
+}
+
+#chatContainer {
+ 	width: 872px; 
+ 	position: relative;
+ 	left: 140px;
+}
+
+#showSongsContainer {
+	position: absolute; 
+	top: 3px; 
+	right: 5px;
+	font-size: small;
+	color: pink;
+}
+
+@media only screen and (min-width: 1160px) {
+	body {
+		max-width: 1160px;
+    margin: 0 auto;
+ 	}
 }
