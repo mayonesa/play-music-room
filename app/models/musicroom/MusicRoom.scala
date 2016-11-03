@@ -146,7 +146,7 @@ private class MusicRoom(private val id: Int,
 
   private def playCurrentInMidstream(ch: Channel) = if (playlist.isPlaying) {
     val currentSongElapsed = currentTime - lastPlayTime
-    if (currentSongElapsed < currentSong.length) {
+    if (currentSongElapsed < currentSong.dur) {
       ch.pushSong(currentSong, currentSongElapsed)
     }
   }
@@ -183,7 +183,7 @@ private class MusicRoom(private val id: Int,
     schedNextPlay()
   }
 
-  private def schedNextPlay() = room(roomSchedule(processNext, currentSong.length))
+  private def schedNextPlay() = room(roomSchedule(processNext, currentSong.dur))
 
   private def pushCurrentSong(c: Channel) = pushSong(c, currentSong)
 
