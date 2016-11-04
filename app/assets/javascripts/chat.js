@@ -10,7 +10,7 @@ function chat() {
 }
 function ifReturnChat(e) {
 	var code = e.keyCode ? e.keyCode : e.which;
-	if(code === 13) {
+	if(code === 13 && $chat.val().trim().length !== 0) {
 		chat();
 	}
 }
