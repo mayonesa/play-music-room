@@ -19,7 +19,7 @@
     <div id="libContainer">
         <ul>
         @musicLibrary.map { song =>
-            <li>@song.name - @song.artist (@song.timeStr)<input type="button" class="addButton" value="Add" onclick="addSong(@song.id);"></li>
+            <li>@song.name - @song.artist (@song.timeStr)<input type="button" class="addButton" value="+" onclick="addSong(@song.id);"></li>
         }
         </ul>
     </div>
