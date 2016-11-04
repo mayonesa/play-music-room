@@ -16,28 +16,29 @@
 	    routes.javascript.MusicRoomController.sseSongInfos,
 	    routes.javascript.MusicRoomController.playSong
 	)    
-    <div id="libContainer" style="display: inline-block;">
+    <div id="libContainer">
         <ul>
         @musicLibrary.map { song =>
             <li>@song.name - @song.artist (@song.timeStr)<input type="button" class="addButton" value="Add" onclick="addSong(@song.id);"></li>
         }
         </ul>
     </div>
-    <div id="playerContainer" style="display: none;">
+    <div id="playerContainer">
     	<audio autoplay>
     		<p>Your browser does not support this audio player/format. Try from a more current/common one.</p>
     	</audio>
     </div>
     @if(channel.isInstanceOf[models.playlist.PlaylistViewer]) {
-    	<div id="playlistContainer" style="display: inline-block;">
-    		<ul id="playlist" style="width: 375px;">
+    	<div id="playlistContainer">
+    		<ul id="playlist">
     		</ul>
     	</div>
     }
-    <div id="voteToSkipContainer"><button id="voteButton" class="disabledButton" style="position: relative; left: 330px; bottom: 8px; top: -15px;">Vote to Skip to Next Song</button></div>
+    <div id="voteToSkipContainer"><button id="voteButton" class="disabledButton">Vote to Skip to Next Song</button></div>
     @if(channel.isInstanceOf[models.chatbox.client.ChatBoxListener]) {
-	    <div id="chatLog">
+	    <div id="chatLogShowSongsContainer">
 				<div id="showSongsContainer"><input id="showSongs" type="checkbox" checked> songs</div>
+				<div id="chatLog"></div>
 	    </div>
 			@if(channel.isInstanceOf[models.chatbox.client.ChatBoxFullClient]) {
  				<div id="chatContainer">

@@ -130,16 +130,44 @@ input[type=text]:focus {
 	color: azure;
 }
 
-#chatLog {
+#libContainer {
+	display: inline-block;
+}
+
+#playlistContainer {
+	display: inline-block;
+}
+
+#playlist {
+	width: 375px;
+}
+
+#playerContainer {
+	display: none;
+}
+
+#voteButton {
+	position: relative; 
+	left: 330px; 
+	bottom: 8px; 
+	top: -15px;	
+}
+
+#chatLogShowSongsContainer {
   width: 872px;
 	margin: auto;
-  padding: 12px 20px;
   box-sizing: border-box;
   border: 1px solid #555;
   outline: none;
 	background: steelblue;
 	height: 200px;
+}
+
+#chatLog {
+	height: 90%;
 	overflow: scroll;
+  padding-left: 10px;
+	position: relative;
 }
 
 #chatLogItem {
@@ -147,7 +175,8 @@ input[type=text]:focus {
 	font-size: 12px;
 	margin: 6px;
 	position: relative;
-	top: -12px;}
+	top: -8px;
+}
 
 #chatContainer {
  	width: 872px; 
@@ -156,8 +185,8 @@ input[type=text]:focus {
 
 #showSongsContainer {
 	position: relative; 
-	top: -8px; 
-	left: 400px;
+	left: 807px;
+	width: 57px;
 	font-size: small;
 	color: azure;
 }
