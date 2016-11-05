@@ -12,7 +12,7 @@ class SongLibrary @Inject() (system: ActorSystem) {
   def apply(songId: Int): Song = songs(songId)
   private val logger = Logger(getClass)
   private val ioOps = system.dispatchers.lookup("contexts.io-ops")
-  private val commonPath = "/Users/john_jimenez/Music/music-room/"
+  private val commonPath = "/home/john_jimenez/music/"
 
   private val songs = Map((1 -> Song(1, "Big in Japan", "Tom Waits", 245 seconds, commonPath + "Tom_Waits-Big_In_Japan.mp3")),
     (2 -> Song(2, "Someone Great", "LCD Soundsystem", 386 seconds, commonPath + "LCD_Soundsystem-Someone_Great.mp3")),
