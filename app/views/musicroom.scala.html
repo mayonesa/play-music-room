@@ -61,9 +61,6 @@
 	        	}
 	    	});
 	    	$chat = $("#text");
-	    	$(window).on("unload", function() {
-	    		leaveRoom();
-	    	});
 	    });
 	    function addSong(songId) {
 	        $.ajax(jsRoutes.controllers.MusicRoomController.addSong(channelId, songId))
