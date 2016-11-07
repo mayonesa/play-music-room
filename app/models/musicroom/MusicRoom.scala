@@ -114,7 +114,7 @@ private class MusicRoom(private val id: Int,
                         lastPlayTime: Duration,
                         private val lock: AnyRef) { // lock for all versions of the same room to avoid blocking all the rooms just for room-specific safety req'ts
 
-  private def this(name: String) = this(roomIdGen.incrementAndGet(), name, Playlist(), ParSet.empty[Channel], 0, new ChatBoxImpl, new Timer(), null, null, new AnyRef)
+  private def this(name: String) = this(roomIdGen.incrementAndGet(), name, Playlist(), ParSet.empty[Channel], 0, new ChatBoxImpl, new Timer, null, null, new AnyRef)
 
   private def addChannel(channel: Channel) = room(channels + channel)
 
