@@ -14,7 +14,8 @@
 	    routes.javascript.MusicRoomController.ssePlaylistAdds,
 	    routes.javascript.MusicRoomController.sseChats,
 	    routes.javascript.MusicRoomController.sseSongInfos,
-	    routes.javascript.MusicRoomController.playSong
+	    routes.javascript.MusicRoomController.playSong,
+			routes.javascript.MusicRoomController.ping
 	)    
     <div id="libContainer">
         <ul>
@@ -52,16 +53,6 @@
 	    var $voteButton;
 	    var currentSongId = null;
 	    var $chat;
-	    $(function() {
-	    	$voteButton = $("#voteButton");
-	    	$voteButton.click(function() {
-	        	if (currentSongId && this.className != "disabledButton") {
-	            	this.className = "disabledButton";
-	            	$.ajax(jsRoutes.controllers.MusicRoomController.voteToSkip(channelId, currentSongId));
-	        	}
-	    	});
-	    	$chat = $("#text");
-	    });
 	    function addSong(songId) {
 	        $.ajax(jsRoutes.controllers.MusicRoomController.addSong(channelId, songId))
 	    }
@@ -73,6 +64,19 @@
 					$voteButton.addClass('blueButton').removeClass('disabledButton');
 				}
 	    }
+	    $(function() {
+	    	$voteButton = $("#voteButton");
+	    	$voteButton.click(function() {
+	        	if (currentSongId && this.className != "disabledButton") {
+	            	this.className = "disabledButton";
+	            	$.ajax(jsRoutes.controllers.MusicRoomController.voteToSkip(channelId, currentSongId));
+	        	}
+	    	});
+	    	$chat = $("#text");
+	    });
+			setInterval(function() {
+				$.ajax(jsRoutes.controllers.MusicRoomController.ping(channelId))
+			}, 20000)
 	  </script>
 	  <script src="@routes.Assets.at("javascripts/player.js")" type="text/javascript"></script>
 	  @if(channel.isInstanceOf[models.playlist.PlaylistViewer]) {
