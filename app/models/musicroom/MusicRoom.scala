@@ -6,7 +6,7 @@ import models.chatbox._
 import models.chatbox.client._
 import models.playlist._
 import events._
-import models.auxiliaries.{ schedule, currentTime, KillSong }
+import models.auxiliaries.{ schedule, currentTime, KillSong, Skipped }
 import models.chatbox.ChatBoxImpl
 import models.chatbox.ChatBox
 import models.playlist.Playlist
@@ -79,13 +79,7 @@ object MusicRoom {
           case AddSong(song)        ⇒ roomLock.synchronized(putRoom(r.addSong(song)))
           case VoteToSkipSong(song) ⇒ roomLock.synchronized(r.voteForSkip(song).foreach(putRoom))
           case LeaveRoom ⇒
-            roomLock.synchronized {
-							if (r.channels.size < 2) {
-								roomRepo -= roomId
-							} else {
-								putRoom(r dropChannel channel)
-							}
-						}
+            roomLock.synchronized(putRoom(r dropChannel channel))
             channel match {
               case l: ChatBoxListener ⇒ chatBox.removeListener(l)
               case _                  ⇒
@@ -167,21 +161,21 @@ private class MusicRoom(private val id: Int,
   private def skip() = {
     futurePlay.cancel()
     if (playlist.hasNext) {
-      next(0).play()
+      skipToNext().play()
     } else {
       stopCurrentSong()
     }
   }
 
   private def stopCurrentSong() = {
-    val stoppedRoom = stopSongRoom
+    val stoppedRoom = stopSongRoom(Skipped)
     channels.foreach(stoppedRoom.pushSong(_, KillSong))
     stoppedRoom
   }
 
-  private def next(): MusicRoom = next(nSkipVotes)
+  private def skipToNext() = next(0, Skipped)
 
-  private def next(newNSkipVs: Int) = room(playlist.advance(), newNSkipVs)
+  private def next(newNSkipVs: Int = nSkipVotes, skipped: Boolean = false) = room(playlist.advance(skipped), newNSkipVs)
 
   private def play(): MusicRoom = {
     channels.foreach(pushCurrentSong)
@@ -210,7 +204,7 @@ private class MusicRoom(private val id: Int,
   }
 
   private def onStop() = {
-    val stoppedRoom = stopSongRoom
+    val stoppedRoom = stopSongRoom()
     stoppedRoom.channels.foreach(stoppedRoom.pushPlaylist)
     stoppedRoom
   }
@@ -232,7 +226,7 @@ private class MusicRoom(private val id: Int,
 
   private def room(newPlaylist: Playlist, newSkipVs: Int) = MusicRoom(id, name, newPlaylist, channels, newSkipVs, chatBox, roomScheduler, futurePlay, lastPlayTime, lock)
 
-  private def stopSongRoom = MusicRoom(id, name, playlist.stop, channels, 0, chatBox, roomScheduler, null, null, lock)
+  private def stopSongRoom(skipped: Boolean = false) = MusicRoom(id, name, playlist.stop(skipped), channels, 0, chatBox, roomScheduler, null, null, lock)
 
   private def roomSchedule(body: () ⇒ Unit, delay: Duration) = schedule(body, delay, roomScheduler)
 

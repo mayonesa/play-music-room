@@ -13,6 +13,8 @@ $(function() {
 			else {
 				if (song.current) {
 					liClass = 'currentSong';
+				} else if (song.skipped) {
+					liClass = 'skippedSong';
 				} else {
 					liClass = 'playlistItem';
 				}

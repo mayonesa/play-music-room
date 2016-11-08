@@ -1,6 +1,6 @@
 name := "music-listening-room"
 
-version := "1.0-SNAPSHOT"
+version := "0.1"
 
 scalaVersion := "2.11.8"
 

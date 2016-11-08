@@ -4,7 +4,7 @@ import models.chatbox.client.ChatBoxFullClient
 import models.playlist.PlaylistViewer
 import PlaylistViewer.playlistView
 import models.song.Song
-import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlayableSong, ClearPlaylist, PlaylistInfo, DefaultChatHistorySize, DefaultPlaylistSize }
+import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlayableSong, ClearPlaylist, PlaylistInfo, DefaultChatHistorySize, DefaultPlaylistSize, SkippableSong, Skipped, Playing }
 import models.channel.FullChannel.{ SongPush, PlaylistPush, ChatPush, logger }
 import models.MaxSizeBuffer
 
@@ -34,7 +34,7 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     sendPlaylist(pl)
   }
   protected[models] def onSongAdd(song: Song) = playlistPush.lock.synchronized {
-    playlistPush.addToBuff((song, false))
+    playlistPush.addToBuff(((song, !Skipped), !Playing))
     pushRequestedPlaylistBuff()
   }
 
@@ -85,13 +85,16 @@ object FullChannel {
     }
     override protected[FullChannel] def writes = new Writes[PlayableSong] {
       def writes(ps: PlayableSong) = ps match {
-        case (song, current) ⇒
-          Json.obj(
-            "id" -> song.id,
-            "name" -> song.name,
-            "artist" -> song.artist,
-            "duration" -> song.timeStr,
-            "current" -> current)
+        case (sSong, current) ⇒ sSong match {
+          case (song, skipped) ⇒
+            Json.obj(
+              "id" -> song.id,
+              "name" -> song.name,
+              "artist" -> song.artist,
+              "duration" -> song.timeStr,
+              "current" -> current,
+              "skipped" -> skipped)
+        }
       }
     }
   }

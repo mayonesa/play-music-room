@@ -12,10 +12,15 @@ import java.time.ZonedDateTime
 import play.api.Logger
 
 package object auxiliaries {
-  type PlaylistInfo = (Queue[Song], Int, Playing)
+  type PlaylistInfo = (Queue[SkippableSong], Int, PlayingType)
   type PlaylistView = SeqView[PlayableSong, Seq[_]]
-  type PlayableSong = (Song, Playing)
-  type Playing = Boolean
+  type PlayableSong = (SkippableSong, PlayingType)
+	type SkippableSong = (Song, SkippedType)
+	type PlayingType = Boolean
+	type SkippedType = Boolean
+	
+	private[models] val Skipped = true
+	private[models] val Playing = true
 
   type ChatBoxSubscriber = mutable.Subscriber[ChatEvent, ChatBoxClientName] // for `log` to listen in on chats
   type ChatHistory = Iterator[ChatBoxClientNameEvent]
@@ -31,7 +36,7 @@ package object auxiliaries {
   private val ClearPlaylistSongId = -999
   private val ClearSong = Song(ClearPlaylistSongId, "", "", 0 seconds, "")
   private val KillSongId = -888
-  private[models] val ClearPlaylist = (ClearSong, false)
+  private[models] val ClearPlaylist = ((ClearSong, false), false)
   private[models] val KillSong = Song(KillSongId, "", "", 0 seconds, "")
 
   def schedule(body: () ⇒ Unit, delay: Duration, scheduler: Timer): TimerTask = {
