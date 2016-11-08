@@ -7,20 +7,20 @@
     <h2>Welcome to Play Music Rooms</h2>
     @form(routes.HomeController.join()) {
     	@entryForm.globalErrors.map { error =>
-            <p class="error">
-                @error.message
-            </p>
-        }
+        <p class="error">
+            @error.message
+        </p>
+      }
     	
     	@inputText(entryForm("channelName"), '_label -> "nom de plume", 'required -> "required", '_help -> "The name that others in the room will see (try to be unique)")
-		@if(!rooms.isEmpty) {
-			@select(entryForm("joinRoomIdOpt"), options(rooms), '_default -> "select (if joining) a pre-existing room", '_label -> "existing rooms", '_help -> "Choose room to join if not wanting start a new one (below)")
-    		@inputText(entryForm("newRoomNameOpt"), '_label -> "new-room name", '_help -> "Name of the new room to create (if not joining a pre-existing one listed above)")
- 		} else {
-    		@inputText(entryForm("newRoomNameOpt"), '_label -> "new-room name", 'required -> "required", '_help -> "Name of the new room to create")
- 		}
- 		<div>
-			<input type="submit" class="blueButton" value="Join" style="position: relative; left: -400px; top: 70px;" />
-		</div>
+			@if(!rooms.isEmpty) {
+				@select(entryForm("joinRoomIdOpt"), options(rooms), '_default -> "select (if joining) a pre-existing room", '_label -> "existing rooms", '_help -> "Choose room to join if not wanting start a new one (below)")
+	    	@inputText(entryForm("newRoomNameOpt"), '_label -> "new-room name", '_help -> "Name of the new room to create (if not joining a pre-existing one listed above)")
+	 		} else {
+	    	@inputText(entryForm("newRoomNameOpt"), '_label -> "new-room name", 'required -> "required", '_help -> "Name of the new room to create")
+	 		}
+	 		<div style="position: absolute; left: 540px; top: 210px;">
+				<input type="submit" class="blueButton" value="Join" />
+			</div>
     }
 }
