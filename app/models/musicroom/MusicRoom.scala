@@ -79,7 +79,13 @@ object MusicRoom {
           case AddSong(song)        ⇒ roomLock.synchronized(putRoom(r.addSong(song)))
           case VoteToSkipSong(song) ⇒ roomLock.synchronized(r.voteForSkip(song).foreach(putRoom))
           case LeaveRoom ⇒
-            roomLock.synchronized(putRoom(r dropChannel channel))
+            roomLock.synchronized {
+							if (r.channels.size < 2) {
+								roomRepo -= roomId
+							} else {
+								putRoom(r dropChannel channel)
+							}
+						}
             channel match {
               case l: ChatBoxListener ⇒ chatBox.removeListener(l)
               case _                  ⇒
