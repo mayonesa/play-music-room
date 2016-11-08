@@ -14,4 +14,8 @@ initialize := {
     sys.error("Java 8 is required for this project.")
 }
 
+sources in (Compile, doc) := Seq.empty
+
+publishArtifact in (Compile, packageDoc) := false
+
 EclipseKeys.preTasks := Seq(compile in Compile)
