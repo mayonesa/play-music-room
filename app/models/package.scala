@@ -12,9 +12,13 @@ import java.time.ZonedDateTime
 import play.api.Logger
 
 package object auxiliaries {
+	object SongIndicator extends Enumeration {
+	  val Current, Skipped, Regular = Value
+	}
+
   type PlaylistInfo = (Queue[SkippableSong], Int, PlayingType)
-  type PlaylistView = SeqView[PlayableSong, Seq[_]]
-  type PlayableSong = (SkippableSong, PlayingType)
+  type PlaylistView = SeqView[PlaylistSong, Seq[_]]
+  type PlaylistSong = (Song, SongIndicator.Value)
 	type SkippableSong = (Song, SkippedType)
 	type PlayingType = Boolean
 	type SkippedType = Boolean
@@ -36,7 +40,7 @@ package object auxiliaries {
   private val ClearPlaylistSongId = -999
   private val ClearSong = Song(ClearPlaylistSongId, "", "", 0 seconds, "")
   private val KillSongId = -888
-  private[models] val ClearPlaylist = ((ClearSong, false), false)
+  private[models] val ClearPlaylist = (ClearSong, SongIndicator.Regular)
   private[models] val KillSong = Song(KillSongId, "", "", 0 seconds, "")
 
   def schedule(body: () ⇒ Unit, delay: Duration, scheduler: Timer): TimerTask = {

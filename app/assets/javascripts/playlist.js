@@ -2,7 +2,6 @@ $(function() {
 	if (!!EventSource) {
 		var CLEAR_PLAYLIST_SONG_ID = -999;
 		var $playlist = $('#playlist');
-		var liClass;
 		var song;
 		var playlistAddsSrc = new EventSource(jsRoutes.controllers.MusicRoomController.ssePlaylistAdds(channelId).url);
 		playlistAddsSrc.addEventListener('message', function(event) {
@@ -11,14 +10,7 @@ $(function() {
 				$playlist.empty();
 			}
 			else {
-				if (song.current) {
-					liClass = 'currentSong';
-				} else if (song.skipped) {
-					liClass = 'skippedSong';
-				} else {
-					liClass = 'playlistItem';
-				}
-				var li = '<li id="' + song.id + '" class="' + liClass + '">' + song.name + ' - ' + song.artist + ' (' + song.duration + ')</li>';
+				var li = '<li id="' + song.id + '" class="' + song.indicator + 'Song">' + song.name + ' - ' + song.artist + ' (' + song.duration + ')</li>';
 				$playlist.append(li);
 				$playlist.scrollTop($playlist.prop('scrollHeight'));
 			}

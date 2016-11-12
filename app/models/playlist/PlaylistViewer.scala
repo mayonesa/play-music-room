@@ -1,7 +1,9 @@
 package models.playlist
 
 import models.song.Song
-import models.auxiliaries.{ PlaylistInfo, PlaylistView, PlayingType, SkippableSong }
+import models.auxiliaries.{ PlaylistInfo, PlaylistView, PlayingType, SkippableSong, SongIndicator }
+
+import collection.SeqView
 
 trait PlaylistViewer {
   protected[models] def initPlaylist(pwcsi: PlaylistInfo)
@@ -10,13 +12,16 @@ trait PlaylistViewer {
 }
 
 object PlaylistViewer {
-  def playlistView(pli: PlaylistInfo) = playlistMap(pli, (s, p) ⇒ (s, p))
-  def playlistMap[B](pli: PlaylistInfo, playableSongHandler: (SkippableSong, PlayingType) ⇒ B) = indices(pli).map(handle(pli, playableSongHandler))
-  def playlistForeach(pli: PlaylistInfo, playableSongHandler: (SkippableSong, PlayingType) ⇒ Unit) = indices(pli).foreach(handle(pli, playableSongHandler))
-  private def handle[B](pli: PlaylistInfo, playableSongHandler: (SkippableSong, PlayingType) ⇒ B) = (i: Int) ⇒ playableSongHandler.tupled(playableSong(pli, i))
+  def playlistView(pli: PlaylistInfo): PlaylistView = playlistMap(pli, (s, p) ⇒ (s, p))
+  def playlistMap[B](pli: PlaylistInfo, playableSongHandler: (Song, SongIndicator.Value) ⇒ B): SeqView[B,Seq[_]] = indices(pli).map(handle(pli, playableSongHandler))
+  def playlistForeach(pli: PlaylistInfo, playableSongHandler: (Song, SongIndicator.Value) ⇒ Unit): Unit = indices(pli).foreach(handle(pli, playableSongHandler))
+  private def handle[B](pli: PlaylistInfo, playableSongHandler: (Song, SongIndicator.Value) ⇒ B) = (i: Int) ⇒ playableSongHandler.tupled(playableSong(pli, i))
   private def playableSong(pli: PlaylistInfo, i: Int) = pli match {
     case (playlist, playingIndex, playing) ⇒
-      (playlist(i), playing && i == playingIndex)
+			playlist(i) match {
+				case (song, skipped) =>
+      		(song, if (skipped) SongIndicator.Skipped else if (playing && i == playingIndex) SongIndicator.Current else SongIndicator.Regular)
+			}
   }
   private def indices(pli: PlaylistInfo) = pli._1.indices.view
 }

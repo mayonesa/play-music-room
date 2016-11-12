@@ -4,7 +4,7 @@ import models.chatbox.client.ChatBoxFullClient
 import models.playlist.PlaylistViewer
 import PlaylistViewer.playlistView
 import models.song.Song
-import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlayableSong, ClearPlaylist, PlaylistInfo, DefaultChatHistorySize, DefaultPlaylistSize, SkippableSong, Skipped, Playing }
+import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlaylistSong, ClearPlaylist, PlaylistInfo, DefaultChatHistorySize, DefaultPlaylistSize, SongIndicator }
 import models.channel.FullChannel.{ SongPush, PlaylistPush, ChatPush, logger }
 import models.MaxSizeBuffer
 
@@ -34,7 +34,7 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     sendPlaylist(pl)
   }
   protected[models] def onSongAdd(song: Song) = playlistPush.lock.synchronized {
-    playlistPush.addToBuff(((song, !Skipped), !Playing))
+    playlistPush.addToBuff((song, SongIndicator.Regular))
     pushRequestedPlaylistBuff()
   }
 
@@ -78,23 +78,20 @@ object FullChannel {
     }
   }
 
-  private class PlaylistPush extends Push[PlayableSong](DefaultPlaylistSize) {
+  private class PlaylistPush extends Push[PlaylistSong](DefaultPlaylistSize) {
     private[FullChannel] def toClear() = {
       clearBuff()
       addToBuff(ClearPlaylist)
     }
-    override protected[FullChannel] def writes = new Writes[PlayableSong] {
-      def writes(ps: PlayableSong) = ps match {
-        case (sSong, current) ⇒ sSong match {
-          case (song, skipped) ⇒
-            Json.obj(
-              "id" -> song.id,
-              "name" -> song.name,
-              "artist" -> song.artist,
-              "duration" -> song.timeStr,
-              "current" -> current,
-              "skipped" -> skipped)
-        }
+    override protected[FullChannel] def writes = new Writes[PlaylistSong] {
+      def writes(ps: PlaylistSong) = ps match {
+        case (song, songIndicator) ⇒ 
+          Json.obj(
+            "id" -> song.id,
+            "name" -> song.name,
+            "artist" -> song.artist,
+            "duration" -> song.timeStr,
+            "indicator" -> songIndicator)
       }
     }
   }
