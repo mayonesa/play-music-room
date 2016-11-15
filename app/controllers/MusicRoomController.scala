@@ -40,6 +40,11 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
     Ok(views.html.bye(ch.name)).withNewSession
   }
 
+  def removeSong(index: Int, channelId: Int) = Action {
+    Future(Channel(channelId).msgHandler(RemoveSong(index)))
+    Accepted
+  }
+
   def chat(channelId: Int) = Action(parse.urlFormEncoded) {
     implicit request ⇒
       Future {
@@ -59,11 +64,11 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
   def ssePlaylistAdds(channelId: Int) = sse(channelId, _.playlistPub)
 
   def sseChats(channelId: Int) = sse(channelId, _.chatPub)
-	
-	def ping(channelId: Int) = Action {
-		Future(Channel(channelId).ping)
-		Accepted
-	}
+
+  def ping(channelId: Int) = Action {
+    Future(Channel(channelId).ping)
+    Accepted
+  }
 
   private def react(channelId: Int, songId: Int, msgr: Song ⇒ Message) = Action {
     Future(Channel(channelId).msgHandler(msgr(songs(songId))))

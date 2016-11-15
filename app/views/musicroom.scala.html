@@ -15,12 +15,13 @@
 	    routes.javascript.MusicRoomController.sseChats,
 	    routes.javascript.MusicRoomController.sseSongInfos,
 	    routes.javascript.MusicRoomController.playSong,
+	    routes.javascript.MusicRoomController.removeSong,
 			routes.javascript.MusicRoomController.ping
 	)    
     <div id="libContainer">
         <ul>
         @musicLibrary.map { song =>
-            <li>@song.name - @song.artist (@song.timeStr)<input type="button" class="addButton" value="+" onclick="addSong(@song.id);"></li>
+            <li>@song.name - @song.artist (@song.timeStr)<input type="button" class="addButton" value="+" onclick="addSong(@song.id);" /></li>
         }
         </ul>
     </div>
@@ -31,8 +32,7 @@
     </div>
     @if(channel.isInstanceOf[models.playlist.PlaylistViewer]) {
     	<div id="playlistContainer">
-    		<ul id="playlist">
-    		</ul>
+    		<ul id="playlist"></ul>
     	</div>
     }
     <div id="voteToSkipContainer"><button id="voteButton" class="disabledButton">Vote to Skip to Next Song</button></div>
@@ -58,6 +58,9 @@
 	    }
 	    function leaveRoom() {
 	        location = jsRoutes.controllers.MusicRoomController.leaveRoom(channelId).url
+	    }
+	    function removeSong(index) {
+	      $.ajax(jsRoutes.controllers.MusicRoomController.removeSong(channelId, index));
 	    }
 	    function onSongPlay() {
 				if ($voteButton && $voteButton.attr('class') === 'disabledButton') {

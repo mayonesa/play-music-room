@@ -76,7 +76,8 @@ object MusicRoom {
       {
         val r = roomRepo(roomId)
         message match {
-          case AddSong(song)        ⇒ roomLock.synchronized(putRoom(r.addSong(song)))
+          case AddSong(song)        ⇒ roomLock.synchronized(putRoom(r.addSong(song, channel)))
+          case RemoveSong(index)    ⇒ roomLock.synchronized(putRoom(r.removeSong(index)))
           case VoteToSkipSong(song) ⇒ roomLock.synchronized(r.voteForSkip(song).foreach(putRoom))
           case LeaveRoom ⇒
             roomLock.synchronized(putRoom(r dropChannel channel))
@@ -120,14 +121,20 @@ private class MusicRoom(private val id: Int,
 
   private def dropChannel(channel: Channel) = room(channels - channel)
 
-  private def addSong(song: Song) = {
-    val newPlaylist = playlist enqueue song
+  private def addSong(song: Song, adder: Channel) = {
+    val newPlaylist = playlist enqueue (song, adder)
     if (playlist.isPlaying) {
-      publishAdd(song)
+      publishAdd(song, adder)
       room(newPlaylist)
     } else {
       room(newPlaylist.advance()).play()
     }
+  }
+
+  private def removeSong(index: Int) = {
+    val r = room(playlist.removeAt(index))
+    channels.foreach(r.pushPlaylist)
+    r
   }
 
   /**
@@ -151,8 +158,8 @@ private class MusicRoom(private val id: Int,
     }
   }
 
-  private def publishAdd(songId: Song) = channels.foreach {
-    case pv: PlaylistViewer ⇒ pv.onSongAdd(songId)
+  private def publishAdd(songId: Song, adder: Channel) = channels.foreach {
+    case pv: PlaylistViewer ⇒ pv.onSongAdd(songId, adder, playlist.size)
     case _                  ⇒
   }
 

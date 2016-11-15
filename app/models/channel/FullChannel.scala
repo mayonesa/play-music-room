@@ -2,9 +2,10 @@ package models.channel
 
 import models.chatbox.client.ChatBoxFullClient
 import models.playlist.PlaylistViewer
-import PlaylistViewer.playlistView
+import PlaylistViewer.playlistForeach
 import models.song.Song
-import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlaylistSong, ClearPlaylist, PlaylistInfo, DefaultChatHistorySize, DefaultPlaylistSize, SongIndicator }
+import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlaylistViewSong, ClearPlaylist, PlaylistInfo, DefaultChatHistorySize, DefaultPlaylistSize, PlaylistViewIndicator }
+import PlaylistViewIndicator.{ Regular, Removable }
 import models.channel.FullChannel.{ SongPush, PlaylistPush, ChatPush, logger }
 import models.MaxSizeBuffer
 
@@ -33,8 +34,8 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     pushRequestedPlaylistBuff()
     sendPlaylist(pl)
   }
-  protected[models] def onSongAdd(song: Song) = playlistPush.lock.synchronized {
-    playlistPush.addToBuff((song, SongIndicator.Regular))
+  protected[models] def onSongAdd(song: Song, adder: Channel, playlistIndex: Int) = playlistPush.lock.synchronized {
+    playlistPush.addToBuff((song, if (this == adder) Removable else Regular, playlistIndex))
     pushRequestedPlaylistBuff()
   }
 
@@ -46,7 +47,7 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
   }
 
   private def sendPlaylist(pli: PlaylistInfo) = {
-    playlistView(pli).map(playlistPush.addToBuff).force
+    playlistForeach(pli)(this)(playlistPush.addToBuff)
     pushRequestedPlaylistBuff()
   }
 
@@ -78,20 +79,21 @@ object FullChannel {
     }
   }
 
-  private class PlaylistPush extends Push[PlaylistSong](DefaultPlaylistSize) {
+  private class PlaylistPush extends Push[PlaylistViewSong](DefaultPlaylistSize) {
     private[FullChannel] def toClear() = {
       clearBuff()
       addToBuff(ClearPlaylist)
     }
-    override protected[FullChannel] def writes = new Writes[PlaylistSong] {
-      def writes(ps: PlaylistSong) = ps match {
-        case (song, songIndicator) ⇒ 
+    override protected[FullChannel] def writes = new Writes[PlaylistViewSong] {
+      def writes(ps: PlaylistViewSong) = ps match {
+        case (song, songIndicator, playlistIndex) ⇒
           Json.obj(
             "id" -> song.id,
             "name" -> song.name,
             "artist" -> song.artist,
             "duration" -> song.timeStr,
-            "indicator" -> songIndicator)
+            "indicator" -> songIndicator,
+            "index" -> playlistIndex)
       }
     }
   }

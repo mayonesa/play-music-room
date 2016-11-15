@@ -7,10 +7,10 @@
     <h2>Welcome to Play Music Rooms</h2>
     @form(routes.HomeController.join()) {
     	@entryForm.globalErrors.map { error =>
-        <p class="error">
-            @error.message
-        </p>
-      }
+            <p class="error">
+                @error.message
+            </p>
+        }
     	
     	@inputText(entryForm("channelName"), '_label -> "nom de plume", 'required -> "required", '_help -> "The name that others in the room will see (try to be unique)")
 			@if(!rooms.isEmpty) {
