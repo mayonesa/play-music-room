@@ -40,8 +40,10 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
     Ok(views.html.bye(ch.name)).withNewSession
   }
 
-  def removeSong(index: Int, channelId: Int) = Action {
-    Future(Channel(channelId).msgHandler(RemoveSong(index)))
+  def removeSong(channelId: Int, index: Int) = Action {
+    Future {
+      Channel(channelId).msgHandler(RemoveSong(index))
+    }
     Accepted
   }
 
