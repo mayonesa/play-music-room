@@ -34,9 +34,7 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
 
   def leaveRoom(channelId: Int) = Action {
     val ch = Channel(channelId)
-    Future {
-      ch.msgHandler(LeaveRoom)
-    }
+    Future(ch.leaveRoom())
     Ok(views.html.bye(ch.name)).withNewSession
   }
 
@@ -67,8 +65,10 @@ class MusicRoomController @Inject() (songs: SongLibrary, system: ActorSystem) ex
 
   def sseChats(channelId: Int) = sse(channelId, _.chatPub)
 
+  def sseRoomAttendance(channelId: Int) = sse(channelId, _.channelUpdatePub)
+
   def ping(channelId: Int) = Action {
-    Future(Channel(channelId).ping)
+    Future(Channel(channelId).ping())
     Accepted
   }
 

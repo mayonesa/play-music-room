@@ -3,10 +3,8 @@ $(function() {
 		var KILL_SONG_ID = -888;
 		var $player = $('audio');
 		var player = $player[0];
-		var songPlay;
+		var songPlay, playUrl, startOnSecs;
 		var songInfoSrc = new EventSource(jsRoutes.controllers.MusicRoomController.sseSongInfos(channelId).url);
-		var playUrl;
-		var startOnSecs;
 		var stopDownloading = function() {
 			player.removeAttribute('src');
 			player.load();

@@ -6,7 +6,7 @@ import models.chatbox._
 import models.chatbox.client._
 import models.playlist._
 import events._
-import models.auxiliaries.{ schedule, currentTime, KillSong, Skipped }
+import models.auxiliaries.{ schedule, currentTime, KillSong, Skipped, Update }
 import models.chatbox.ChatBoxImpl
 import models.chatbox.ChatBox
 import models.playlist.Playlist
@@ -59,7 +59,7 @@ object MusicRoom {
     roomLock.synchronized {
       val r = roomRepo(roomId) addChannel channel
       putRoom(r)
-
+      r.forChannels(channel.notifyOfChannel(_, Update.Add))
       channel match {
         case pv: PlaylistViewer ⇒ pv.initPlaylist(r.playlist.state)
         case _                  ⇒
@@ -117,9 +117,18 @@ private class MusicRoom(private val id: Int,
 
   private def this(name: String) = this(roomIdGen.incrementAndGet(), name, Playlist(), ParSet.empty[Channel], 0, new ChatBoxImpl, new Timer, null, null, new AnyRef)
 
-  private def addChannel(channel: Channel) = room(channels + channel)
+  private def addChannel(channel: Channel) = {
+    notifyOfChannel(channel, Update.Add)
+    room(channels + channel)
+  }
 
-  private def dropChannel(channel: Channel) = room(channels - channel)
+  private def dropChannel(channel: Channel) = {
+    val r = room(channels - channel)
+    r.notifyOfChannel(channel, Update.Remove)
+    r
+  }
+
+  private def notifyOfChannel(ch: Channel, action: Update.Value) = forChannels(_.notifyOfChannel(ch, action))
 
   private def addSong(song: Song, adder: Channel) = {
     val newPlaylist = playlist enqueue (song, adder)
@@ -133,7 +142,7 @@ private class MusicRoom(private val id: Int,
 
   private def removeSong(index: Int) = {
     val r = room(playlist.removeAt(index))
-    channels.foreach(r.pushPlaylist)
+    forChannels(r.pushPlaylist)
     r
   }
 
@@ -158,7 +167,7 @@ private class MusicRoom(private val id: Int,
     }
   }
 
-  private def publishAdd(songId: Song, adder: Channel) = channels.foreach {
+  private def publishAdd(songId: Song, adder: Channel) = forChannels {
     case pv: PlaylistViewer ⇒ pv.onSongAdd(songId, adder, playlist.size)
     case _                  ⇒
   }
@@ -176,7 +185,7 @@ private class MusicRoom(private val id: Int,
 
   private def stopCurrentSong() = {
     val stoppedRoom = stopSongRoom(Skipped)
-    channels.foreach(stoppedRoom.pushSong(_, KillSong))
+    forChannels(stoppedRoom.pushSong(_, KillSong))
     stoppedRoom
   }
 
@@ -185,7 +194,7 @@ private class MusicRoom(private val id: Int,
   private def next(newNSkipVs: Int = nSkipVotes, skipped: Boolean = false) = room(playlist.advance(skipped), newNSkipVs)
 
   private def play(): MusicRoom = {
-    channels.foreach(pushCurrentSong)
+    forChannels(pushCurrentSong)
     chatBox.chat(currentSong)
     schedNextPlay()
   }
@@ -212,7 +221,7 @@ private class MusicRoom(private val id: Int,
 
   private def onStop() = {
     val stoppedRoom = stopSongRoom()
-    stoppedRoom.channels.foreach(stoppedRoom.pushPlaylist)
+    stoppedRoom.forChannels(stoppedRoom.pushPlaylist)
     stoppedRoom
   }
 
@@ -238,4 +247,6 @@ private class MusicRoom(private val id: Int,
   private def roomSchedule(body: () ⇒ Unit, delay: Duration) = schedule(body, delay, roomScheduler)
 
   private def latestRoom = roomRepo(id)
+
+  private def forChannels(f: Channel ⇒ Unit) = channels.foreach(f)
 }

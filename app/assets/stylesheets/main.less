@@ -56,6 +56,21 @@ select {
 		color: orange;
 }
 
+input[type=text] {
+    width: 100%;
+    padding: 12px 20px;
+    box-sizing: border-box;
+    border: 1px solid #555;
+    outline: none;
+		background-color: steelblue;
+		color: yellow;
+	}
+	
+input[type=text]:focus {
+    background-color: lightblue;
+		color: navy;
+}
+
 ul {
     background: steelblue;
     padding: 20px;
@@ -71,21 +86,6 @@ ul {
 				color: navy;
 				overflow-x: hidden;
 		}
-}
-
-input[type=text] {
-    width: 100%;
-    padding: 12px 20px;
-    box-sizing: border-box;
-    border: 1px solid #555;
-    outline: none;
-		background-color: steelblue;
-		color: yellow;
-	}
-	
-input[type=text]:focus {
-    background-color: lightblue;
-		color: navy;
 }
 
 .addButton {
@@ -158,26 +158,30 @@ input[type=text]:focus {
 
 #voteButton {
 	position: relative; 
-	left: 330px; 
-	bottom: 8px; 
+	left: 335px; 
 	top: -15px;	
 }
 
+#fullChatContainer {
+	position: relative;
+  top: -47px;
+	left: -5px;
+  display: inline-block;
+  width: 648px;
+}
+
 #chatLogShowSongsContainer {
-  width: 881px;
 	margin: auto;
   box-sizing: border-box;
   border: 1px solid #555;
   outline: none;
 	background: steelblue;
-	height: 200px;
+	height: 201px;
 }
 
 #chatLog {
-	height: 90%;
 	overflow: scroll;
   padding-left: 10px;
-	position: relative;
 }
 
 #chatLogItem {
@@ -189,16 +193,42 @@ input[type=text]:focus {
 }
 
 #chatContainer {
- 	width: 881px; 
  	margin: auto;
 }
 
 #showSongsContainer {
 	position: relative; 
-	left: 807px;
+	left: 581px;
 	width: 57px;
 	font-size: small;
 	color: azure;
+}
+
+#attendants {
+	margin: auto;
+  box-sizing: border-box;
+  border: 1px solid #555;
+  outline: none;
+	background: steelblue;
+	display: inline-block;
+	overflow: scroll;
+  padding-left: 10px;
+  width: 220px;
+	height: 199px;
+	position: relative;
+  top: -32px;
+  left: 6px;
+}
+
+.attendant {
+	text-align: left;
+	font-size: 12px;
+	margin: 6px;
+	color: pink;
+}
+
+.me {
+	color: chartreuse;
 }
 
 @media only screen and (min-width: 1160px) {

@@ -16,6 +16,9 @@ package object auxiliaries {
   object PlaylistViewIndicator extends Enumeration {
     val Current, Skipped, Regular, Removable = Value
   }
+  object Update extends Enumeration {
+    val Add, Remove = Value
+  }
 
   type PlaylistInfo = (Queue[PlaylistSong], Int, PlayingType)
   type PlaylistViewSong = (Song, PlaylistViewIndicator.Value, Int)
@@ -38,6 +41,8 @@ package object auxiliaries {
 
   val DefaultChatHistorySize = 1000 // if increased from 1000, must mod ChatBoxImpl.log accordingly in order to be effective
   val DefaultPlaylistSize = 500
+  
+  // TODO: get rid of magic #s
   private val ClearPlaylistViewSongId = -999
   private val ClearSong = Song(ClearPlaylistViewSongId, "", "", 0 seconds, "")
   private val KillSongId = -888

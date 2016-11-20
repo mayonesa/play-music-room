@@ -17,6 +17,7 @@ POST  /musicRoom/chat/channel/:channelId                    controllers.MusicRoo
 GET   /musicRoom/ssePlaylistAdds/channel/:channelId         controllers.MusicRoomController.ssePlaylistAdds(channelId: Int)
 GET   /musicRoom/sseChats/channel/:channelId                controllers.MusicRoomController.sseChats(channelId: Int)
 GET   /musicRoom/sseSongInfos/channel/:channelId            controllers.MusicRoomController.sseSongInfos(channelId: Int)
+GET   /musicRoom/sseRoomAttendance/channel/:channelId       controllers.MusicRoomController.sseRoomAttendance(channelId: Int)
 
 GET   /musicRoom/ping/channel/:channelId            				controllers.MusicRoomController.ping(channelId: Int)
 

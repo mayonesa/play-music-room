@@ -2,7 +2,7 @@ package models.channel
 
 import events.{ Message, LeaveRoom }
 import models.song.Song
-import models.auxiliaries.schedule
+import models.auxiliaries.{ schedule, Update }
 
 import collection.concurrent
 import scala.concurrent.duration._
@@ -14,9 +14,13 @@ abstract class Channel(val id: Int, val name: String) {
   private val scheduler = new Timer
   private var leaveRoomTask: TimerTask = schedRoomLeave()
 
-  def ping: Unit = {
+  def ping(): Unit = {
     leaveRoomTask.cancel()
     leaveRoomTask = schedRoomLeave()
+  }
+  def leaveRoom() = {
+    leaveRoomTask.cancel()
+    msgHandler(LeaveRoom)
   }
   final def msgHandler = _msgHandler // consider wrapping up in Option and throwing exception for None
   override def equals(a: Any): Boolean = a match {
@@ -25,6 +29,7 @@ abstract class Channel(val id: Int, val name: String) {
   }
   private[models] def pushSong(song: Song, startTime: Duration = 0 seconds) // push a song to the client which will start to play. can be used to update client's playlist representation.
   private[models] def onReceive(handler: (Message) ⇒ Unit) = _msgHandler = handler
+  private[models] def notifyOfChannel(ch: Channel, action: Update.Value)
   private def schedRoomLeave() = schedule(() ⇒ msgHandler(LeaveRoom), 2.minutes, scheduler)
 }
 

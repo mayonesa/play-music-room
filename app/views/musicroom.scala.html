@@ -4,7 +4,7 @@
 
 @main {
     
-    <h1>@channel.name @@ @session.get("roomName")</h1>
+    <h1 style="margin-top: 11px; margin-bottom: 2px;">@channel.name @@ @session.get("roomName")</h1>
     
 	@javascriptRouter("jsRoutes")(
 	    routes.javascript.MusicRoomController.addSong,
@@ -14,12 +14,13 @@
 	    routes.javascript.MusicRoomController.ssePlaylistAdds,
 	    routes.javascript.MusicRoomController.sseChats,
 	    routes.javascript.MusicRoomController.sseSongInfos,
+			routes.javascript.MusicRoomController.sseRoomAttendance,
 	    routes.javascript.MusicRoomController.playSong,
 	    routes.javascript.MusicRoomController.removeSong,
 			routes.javascript.MusicRoomController.ping
 	)    
     <div id="libContainer">
-        <ul>
+        <ul class='songList'>
         @musicLibrary.map { song =>
             <li>@song.name - @song.artist (@song.timeStr)<input type="button" class="addButton" value="+" onclick="addSong(@song.id);" /></li>
         }
@@ -32,22 +33,25 @@
     </div>
     @if(channel.isInstanceOf[models.playlist.PlaylistViewer]) {
     	<div id="playlistContainer">
-    		<ul id="playlist"></ul>
+    		<ul id="playlist" class='songList'></ul>
     	</div>
     }
     <div id="voteToSkipContainer"><button id="voteButton" class="disabledButton">Vote to Skip to Next Song</button></div>
     @if(channel.isInstanceOf[models.chatbox.client.ChatBoxListener]) {
-	    <div id="chatLogShowSongsContainer">
-				<div id="showSongsContainer"><input id="showSongs" type="checkbox" checked> songs</div>
-				<div id="chatLog"></div>
-	    </div>
-			@if(channel.isInstanceOf[models.chatbox.client.ChatBoxFullClient]) {
- 				<div id="chatContainer">
-					<input type="text" id="text" placeholder="talk (press <return> to send)" onkeydown="ifReturnChat(event)" />
-		 		</div>
- 			}
+	    <div id="fullChatContainer">
+				<div id="chatLogShowSongsContainer">
+					<div id="showSongsContainer"><input id="showSongs" type="checkbox" checked> songs</div>
+					<div id="chatLog"></div>
+		    </div>
+				@if(channel.isInstanceOf[models.chatbox.client.ChatBoxFullClient]) {
+	 				<div id="chatContainer">
+						<input type="text" id="text" placeholder="talk (press <return> to send)" onkeydown="ifReturnChat(event)" />
+			 		</div>
+	 			}
+				</div>
+			<div id="attendants"></div>
 	 	}
-    <div id="leaveRoomContainer"><button class="blueButton" onclick="leaveRoom();" style="position: relative; top: 20px; left: 330px;">Leave Room =></button></div>
+    <div id="leaveRoomContainer"><button class="blueButton" onclick="leaveRoom();" style="position: relative; top: -28px; left: 330px;">Leave Room =></button></div>
     <script>
 	    var channelId = @channel.id;
 	    var $voteButton;
@@ -91,4 +95,5 @@
 	    	<script src="@routes.Assets.at("javascripts/chat.js")" type="text/javascript"></script>
 			}
 		}
+		<script src="@routes.Assets.at("javascripts/channelAttendants.js")" type="text/javascript"></script>
 }

@@ -10,7 +10,7 @@ $(function() {
 				$playlist.empty();
 			}
 			else {
-				var li = '<li id="' + playlistSong.id + '" class="' + playlistSong.indicator + 'Song">';
+				var li = '<li class="' + playlistSong.indicator + 'Song">';
 				if (playlistSong.indicator === "Removable") {
 					li += '<input type="button" class="removeButton" value="-" onclick="removeSong(' + playlistSong.index + ');" />';
 				}

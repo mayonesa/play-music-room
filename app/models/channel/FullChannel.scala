@@ -4,9 +4,9 @@ import models.chatbox.client.ChatBoxFullClient
 import models.playlist.PlaylistViewer
 import PlaylistViewer.playlistForeach
 import models.song.Song
-import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlaylistViewSong, ClearPlaylist, PlaylistInfo, DefaultChatHistorySize, DefaultPlaylistSize, PlaylistViewIndicator }
+import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlaylistViewSong, ClearPlaylist, PlaylistInfo, DefaultChatHistorySize, DefaultPlaylistSize, PlaylistViewIndicator, Update }
 import PlaylistViewIndicator.{ Regular, Removable }
-import models.channel.FullChannel.{ SongPush, PlaylistPush, ChatPush, logger }
+import models.channel.FullChannel.{ SongPush, PlaylistPush, ChatPush, ChannelUpdatePush, logger }
 import models.MaxSizeBuffer
 
 import annotation.tailrec
@@ -19,42 +19,32 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
   private val songPush = new SongPush()
   private val playlistPush = new PlaylistPush()
   private val chatPush = new ChatPush()
+  private val channelUpdatePush = new ChannelUpdatePush()
 
   def songPub: Publisher[JsValue] = songPush.pub
   def playlistPub: Publisher[JsValue] = playlistPush.pub
   def chatPub: Publisher[JsValue] = chatPush.pub
+  def channelUpdatePub: Publisher[JsValue] = channelUpdatePush.pub
 
-  def notify(cn: ChatBoxClientName, e: ChatEvent) = chatPush.lock.synchronized {
-    chatPush.addToBuff((cn, e))
-    chatPush.push()
-  }
+  def notify(cn: ChatBoxClientName, e: ChatEvent) = chatPush.pushRequested((cn, e))
+
   protected[models] def initPlaylist(pl: PlaylistInfo) = playlistPush.lock.synchronized(sendPlaylist(pl))
   protected[models] def onSongPush(pl: PlaylistInfo) = playlistPush.lock.synchronized {
     playlistPush.toClear()
-    pushRequestedPlaylistBuff()
+    playlistPush.pushRequested()
     sendPlaylist(pl)
   }
-  protected[models] def onSongAdd(song: Song, adder: Channel, playlistIndex: Int) = playlistPush.lock.synchronized {
-    playlistPush.addToBuff((song, if (this == adder) Removable else Regular, playlistIndex))
-    pushRequestedPlaylistBuff()
-  }
+  protected[models] def onSongAdd(song: Song, adder: Channel, playlistIndex: Int) =
+    playlistPush.pushRequested((song, if (this == adder) Removable else Regular, playlistIndex))
 
-  private[models] def pushSong(song: Song, startTime: Duration) = songPush.lock.synchronized {
-    songPush.addToBuff((song.id, startTime))
-    if (songPush.requested) {
-      songPush.push()
-    }
-  }
+  private[models] def notifyOfChannel(ch: Channel, action: Update.Value) = channelUpdatePush.pushRequested((ch, action))
+
+  private[models] def pushSong(song: Song, startTime: Duration) = songPush.pushRequested((song.id, startTime))
 
   private def sendPlaylist(pli: PlaylistInfo) = {
     playlistForeach(pli)(this)(playlistPush.addToBuff)
-    pushRequestedPlaylistBuff()
+    playlistPush.pushRequested()
   }
-
-  private def pushRequestedPlaylistBuff() =
-    if (playlistPush.requested) {
-      playlistPush.push()
-    }
 }
 
 import models.channel.Channel.newId
@@ -79,10 +69,22 @@ object FullChannel {
     }
   }
 
+  private class ChannelUpdatePush extends Push[(Channel, Update.Value)] {
+    override protected[FullChannel] def writes = new Writes[(Channel, Update.Value)] {
+      def writes(chAct: (Channel, Update.Value)) = chAct match {
+        case (channel, action) ⇒
+          Json.obj(
+            "id" -> channel.id,
+            "name" -> channel.name,
+            "action" -> action)
+      }
+    }
+  }
+
   private class PlaylistPush extends Push[PlaylistViewSong](DefaultPlaylistSize) {
     private[FullChannel] def toClear() = {
       clearBuff()
-      addToBuff(ClearPlaylist)
+      addToBuff(ClearPlaylist) // TODO: find cleaner way to clear playlist
     }
     override protected[FullChannel] def writes = new Writes[PlaylistViewSong] {
       def writes(ps: PlaylistViewSong) = ps match {
@@ -111,7 +113,7 @@ object FullChannel {
     }
   }
 
-  private abstract class Push[T](maxBuffSize: Int) {
+  private abstract class Push[T](maxBuffSize: Int = Int.MaxValue) {
     private var buff = MaxSizeBuffer[T](maxBuffSize)
     private[FullChannel] val lock = new AnyRef
     private[FullChannel] val pub = new PublisherImpl
@@ -121,7 +123,18 @@ object FullChannel {
     protected[FullChannel] implicit def writes: Writes[T]
     protected[FullChannel] def addToBuff(t: T) = buff = buff enqueue t
     private[FullChannel] def clearBuff() = buff = MaxSizeBuffer[T](maxBuffSize)
-    private[FullChannel] def push() = {
+    private[FullChannel] def pushRequested(t: T): Unit = lock.synchronized {
+      addToBuff(t)
+      pushRequested()
+    }
+    private[FullChannel] def pushRequested() = if (requested) {
+      push()
+    }
+    private def readyForPush = !buff.isEmpty
+    private def onNext(t: T) = sub.onNext(Json.toJson(t))
+    private def decrementReqs() = unfulfilledRequests -= 1
+    private def requested = unfulfilledRequests > 0
+    private def push() = {
       @tailrec
       def loop(): Unit =
         if (requested && !buff.isEmpty) {
@@ -133,10 +146,6 @@ object FullChannel {
         }
       loop()
     }
-    private[FullChannel] def readyForPush = !buff.isEmpty
-    private[FullChannel] def requested = unfulfilledRequests > 0
-    private[FullChannel] def onNext(t: T) = sub.onNext(Json.toJson(t))
-    private[FullChannel] def decrementReqs() = unfulfilledRequests -= 1
     private[FullChannel] class PublisherImpl extends Publisher[JsValue] {
       def subscribe(s: Subscriber[_ >: JsValue]): Unit = {
         sub = s

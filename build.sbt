@@ -4,7 +4,13 @@ version := "0.1"
 
 scalaVersion := "2.11.8"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val root = (project in file(".")).enablePlugins(PlayScala, DebianPlugin)
+
+maintainer in Linux := "John Jimenez <mayonesa.cosmica@gmail.com>"
+
+packageSummary in Linux := "Social music-listening rooms"
+
+packageDescription := "Get social. Share your music tastes. Get turned-on to new tunes"
 
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
 
