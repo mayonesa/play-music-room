@@ -4,9 +4,9 @@ import models.chatbox.client.ChatBoxFullClient
 import models.playlist.PlaylistViewer
 import PlaylistViewer.playlistForeach
 import models.song.Song
-import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlaylistViewSong, ClearPlaylist, PlaylistInfo, DefaultChatHistorySize, DefaultPlaylistSize, PlaylistViewIndicator, Update }
+import models.auxiliaries.{ ChatBoxClientName, ChatBoxClientNameEvent, ChatEvent, PlaylistViewSong, PlaylistInfo, DefaultChatHistorySize, DefaultPlaylistSize, PlaylistViewIndicator, Update }
 import PlaylistViewIndicator.{ Regular, Removable }
-import models.channel.FullChannel.{ SongPush, PlaylistPush, ChatPush, ChannelUpdatePush, logger }
+import models.channel.FullChannel.{ SongPush, PlaylistPush, ChatPush, ChannelUpdatePush, Stop, logger }
 import models.MaxSizeBuffer
 
 import annotation.tailrec
@@ -39,6 +39,8 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
 
   private[models] def notifyOfChannel(ch: Channel, action: Update.Value) = channelUpdatePush.pushRequested((ch, action))
 
+  private[models] def stop() = songPush.force(Stop)
+
   private[models] def pushSong(song: Song, startTime: Duration) = songPush.pushRequested((song.id, startTime))
 
   private def sendPlaylist(pli: PlaylistInfo) = {
@@ -53,6 +55,9 @@ import com.sun.org.apache.xml.internal.resolver.helpers.Debug
 object FullChannel {
   def apply(id: Int): FullChannel = Channel(id).asInstanceOf[FullChannel]
   private def apply(name: String): FullChannel = FullChannel(newId, name)
+
+  private val Clear = "clear"
+  private val Stop = "stop"
 
   private val logger = Logger(getClass)
 
@@ -84,7 +89,7 @@ object FullChannel {
   private class PlaylistPush extends Push[PlaylistViewSong](DefaultPlaylistSize) {
     private[FullChannel] def toClear() = {
       clearBuff()
-      addToBuff(ClearPlaylist) // TODO: find cleaner way to clear playlist
+      force(Clear)
     }
     override protected[FullChannel] def writes = new Writes[PlaylistViewSong] {
       def writes(ps: PlaylistViewSong) = ps match {
@@ -122,6 +127,7 @@ object FullChannel {
 
     protected[FullChannel] implicit def writes: Writes[T]
     protected[FullChannel] def addToBuff(t: T) = buff = buff enqueue t
+    protected[FullChannel] def force(s: String) = sub.onNext(Json.toJson(s))
     private[FullChannel] def clearBuff() = buff = MaxSizeBuffer[T](maxBuffSize)
     private[FullChannel] def pushRequested(t: T): Unit = lock.synchronized {
       addToBuff(t)

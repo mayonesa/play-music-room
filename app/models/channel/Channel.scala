@@ -28,8 +28,9 @@ abstract class Channel(val id: Int, val name: String) {
     case _          ⇒ false
   }
   private[models] def pushSong(song: Song, startTime: Duration = 0 seconds) // push a song to the client which will start to play. can be used to update client's playlist representation.
-  private[models] def onReceive(handler: (Message) ⇒ Unit) = _msgHandler = handler
   private[models] def notifyOfChannel(ch: Channel, action: Update.Value)
+  private[models] def stop()
+  private[models] def onReceive(handler: (Message) ⇒ Unit) = _msgHandler = handler
   private def schedRoomLeave() = schedule(() ⇒ msgHandler(LeaveRoom), 2.minutes, scheduler)
 }
 

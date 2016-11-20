@@ -1,6 +1,6 @@
 $(function() {
 	if (!!EventSource) {
-		var KILL_SONG_ID = -888;
+		var STOP = "stop";
 		var $player = $('audio');
 		var player = $player[0];
 		var songPlay, playUrl, startOnSecs;
@@ -17,7 +17,7 @@ $(function() {
 
 		songInfoSrc.addEventListener('message', function(event) {
 			songPlay = JSON.parse(event.data);
-			if (songPlay.songId === KILL_SONG_ID) {
+			if (songPlay === STOP) {
 				stop();
 			} else {
 				currentSongId = songPlay.songId;

@@ -6,7 +6,7 @@ import models.chatbox._
 import models.chatbox.client._
 import models.playlist._
 import events._
-import models.auxiliaries.{ schedule, currentTime, KillSong, Skipped, Update }
+import models.auxiliaries.{ schedule, currentTime, Skipped, Update }
 import models.chatbox.ChatBoxImpl
 import models.chatbox.ChatBox
 import models.playlist.Playlist
@@ -185,7 +185,10 @@ private class MusicRoom(private val id: Int,
 
   private def stopCurrentSong() = {
     val stoppedRoom = stopSongRoom(Skipped)
-    forChannels(stoppedRoom.pushSong(_, KillSong))
+    forChannels { c =>
+      c.stop()
+      stoppedRoom.pushPlaylist(c)
+    }
     stoppedRoom
   }
 

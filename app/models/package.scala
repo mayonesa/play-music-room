@@ -41,13 +41,6 @@ package object auxiliaries {
 
   val DefaultChatHistorySize = 1000 // if increased from 1000, must mod ChatBoxImpl.log accordingly in order to be effective
   val DefaultPlaylistSize = 500
-  
-  // TODO: get rid of magic #s
-  private val ClearPlaylistViewSongId = -999
-  private val ClearSong = Song(ClearPlaylistViewSongId, "", "", 0 seconds, "")
-  private val KillSongId = -888
-  private[models] val ClearPlaylist = (ClearSong, PlaylistViewIndicator.Regular, -1)
-  private[models] val KillSong = Song(KillSongId, "", "", 0 seconds, "")
 
   def schedule(body: () ⇒ Unit, delay: Duration, scheduler: Timer): TimerTask = {
     val task = timerTask(body)
