@@ -2,10 +2,7 @@ $(function() {
 	if (!!EventSource) {
 		var CLEAR = "clear";
 		var $playlist = $('#playlist');
-		var playlistSong;
-		var playlistAddsSrc = new EventSource(jsRoutes.controllers.MusicRoomController.ssePlaylistAdds(channelId).url);
-		playlistAddsSrc.addEventListener('message', function(event) {
-			playlistSong = JSON.parse(event.data);
+		eventSourceJson(jsRoutes.controllers.MusicRoomController.ssePlaylistAdds(channelId), function(playlistSong) {
 			if (playlistSong === CLEAR) {
 				$playlist.empty();
 			}

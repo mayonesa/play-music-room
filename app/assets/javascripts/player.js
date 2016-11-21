@@ -3,8 +3,7 @@ $(function() {
 		var STOP = "stop";
 		var $player = $('audio');
 		var player = $player[0];
-		var songPlay, playUrl, startOnSecs;
-		var songInfoSrc = new EventSource(jsRoutes.controllers.MusicRoomController.sseSongInfos(channelId).url);
+		var playUrl, startOnSecs;
 		var stopDownloading = function() {
 			player.removeAttribute('src');
 			player.load();
@@ -15,8 +14,7 @@ $(function() {
 			player.pause();
 		};
 
-		songInfoSrc.addEventListener('message', function(event) {
-			songPlay = JSON.parse(event.data);
+		eventSourceJson(jsRoutes.controllers.MusicRoomController.sseSongInfos(channelId), function(songPlay) {
 			if (songPlay === STOP) {
 				stop();
 			} else {
