@@ -35,22 +35,24 @@ case class FullChannel(override val id: Int, _name: String) extends Channel(id, 
     sendPlaylist(pl)
   }
   protected[models] def onSongAdd(song: Song, adder: Channel, playlistIndex: Int) =
-    playlistPush.pushRequested((song, if (this == adder) Removable else Regular, playlistIndex))
+    playlistPush.pushRequested(Left((song, if (this == adder) Removable else Regular, playlistIndex)))
 
   private[models] def notifyOfChannel(ch: Channel, action: Update.Value) = channelUpdatePush.pushRequested((ch, action))
 
-  private[models] def stop() = songPush.force(Stop)
+  private[models] def stop() = songPush.pushRequested(Right(Stop))
 
-  private[models] def pushSong(song: Song, startTime: Duration) = songPush.pushRequested((song.id, startTime))
+  private[models] def pushSong(song: Song, startTime: Duration) = songPush.pushRequested(Left((song.id, startTime)))
 
   private def sendPlaylist(pli: PlaylistInfo) = {
-    playlistForeach(pli)(this)(playlistPush.addToBuff)
+    playlistForeach(pli)(this) { pvSong ⇒
+      playlistPush.addToBuff(Left(pvSong))
+    }
     playlistPush.pushRequested()
   }
 }
 
+
 import models.channel.Channel.newId
-import com.sun.org.apache.xml.internal.resolver.helpers.Debug
 
 object FullChannel {
   def apply(id: Int): FullChannel = Channel(id).asInstanceOf[FullChannel]
@@ -63,13 +65,14 @@ object FullChannel {
 
   def addChannel(name: String): Channel = Channel.addChannel(FullChannel(name))
 
-  private class SongPush extends Push[(Int, Duration)](1) {
-    override protected[FullChannel] def writes = new Writes[(Int, Duration)] {
-      def writes(songPlay: (Int, Duration)) = songPlay match {
-        case (songId, startTime) ⇒
+  private class SongPush extends Push[Either[(Int, Duration), String]](1) {
+    override protected[FullChannel] def writes = new Writes[Either[(Int, Duration), String]] {
+      def writes(songPlay: Either[(Int, Duration), String]) = songPlay match {
+        case Left((songId, startTime)) ⇒
           Json.obj(
             "songId" -> songId,
             "startTimeInSecs" -> startTime.toSeconds)
+        case Right(s) ⇒ JsString(s)
       }
     }
   }
@@ -86,14 +89,14 @@ object FullChannel {
     }
   }
 
-  private class PlaylistPush extends Push[PlaylistViewSong](DefaultPlaylistSize) {
+  private class PlaylistPush extends Push[Either[PlaylistViewSong, String]](DefaultPlaylistSize) {
     private[FullChannel] def toClear() = {
       clearBuff()
-      force(Clear)
+      pushRequested(Right(Clear))
     }
-    override protected[FullChannel] def writes = new Writes[PlaylistViewSong] {
-      def writes(ps: PlaylistViewSong) = ps match {
-        case (song, songIndicator, playlistIndex) ⇒
+    override protected[FullChannel] def writes = new Writes[Either[PlaylistViewSong, String]] {
+      def writes(ps: Either[PlaylistViewSong, String]) = ps match {
+        case Left((song, songIndicator, playlistIndex)) ⇒
           Json.obj(
             "id" -> song.id,
             "name" -> song.name,
@@ -101,6 +104,7 @@ object FullChannel {
             "duration" -> song.timeStr,
             "indicator" -> songIndicator,
             "index" -> playlistIndex)
+        case Right(s) ⇒ JsString(s)
       }
     }
   }
@@ -127,7 +131,6 @@ object FullChannel {
 
     protected[FullChannel] implicit def writes: Writes[T]
     protected[FullChannel] def addToBuff(t: T) = buff = buff enqueue t
-    protected[FullChannel] def force(s: String) = sub.onNext(Json.toJson(s))
     private[FullChannel] def clearBuff() = buff = MaxSizeBuffer[T](maxBuffSize)
     private[FullChannel] def pushRequested(t: T): Unit = lock.synchronized {
       addToBuff(t)
