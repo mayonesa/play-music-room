@@ -10,6 +10,7 @@ project/boot/
 .history
 .cache*
 .travis.yml
+.sbtserver.lock
 
 ### PlayFramework template
 # Ignore Play! working directory #
