@@ -23,5 +23,3 @@ initialize := {
 sources in (Compile, doc) := Seq.empty
 
 publishArtifact in (Compile, packageDoc) := false
-
-EclipseKeys.preTasks := Seq(compile in Compile)
